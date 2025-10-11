@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Customer, Comment, mockCustomers } from '@/lib/mockData';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 // In-memory storage for demo purposes
-let customersData = [...mockCustomers];
+const customersData = [...mockCustomers];
 
 export const useCustomers = () => {
   const queryClient = useQueryClient();

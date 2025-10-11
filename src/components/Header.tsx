@@ -1,65 +1,39 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Bell, Search, User } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { getStoredRole } from '@/lib/roleUtils';
+import { useState } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { UserRole, setStoredRole, getStoredRole } from '@/lib/roleUtils';
 
 export const Header = () => {
-  const [userRole, setUserRole] = useState<'admin' | 'user'>('user');
-  const [isClient, setIsClient] = useState(false);
+  const [currentRole, setCurrentRole] = useState<UserRole>(getStoredRole());
 
-  useEffect(() => {
-    setIsClient(true);
-    setUserRole(getStoredRole());
-  }, []);
-
-  if (!isClient) {
-    return (
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-xl font-semibold text-gray-900">Linguini Holidays CRM</h1>
-          </div>
-        </div>
-      </header>
-    );
-  }
+  const handleRoleChange = (newRole: UserRole) => {
+    setStoredRole(newRole);
+    setCurrentRole(newRole);
+    // Refresh the page to update all components
+    window.location.reload();
+  };
 
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <h1 className="text-xl font-semibold text-gray-900">Linguini Holidays CRM</h1>
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">CRM Dashboard</h1>
+          <p className="text-sm text-gray-600">Manage your travel customers</p>
         </div>
         
         <div className="flex items-center space-x-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search..."
-              className="pl-10 w-64"
-            />
-          </div>
-
-          {/* Notifications */}
-          <Button variant="outline" size="sm">
-            <Bell className="h-4 w-4" />
-          </Button>
-
-          {/* User Profile */}
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-              <User className="h-4 w-4 text-white" />
-            </div>
-            <div className="text-sm">
-              <div className="font-medium text-gray-900">
-                {userRole === 'admin' ? 'Admin User' : 'Regular User'}
-              </div>
-              <div className="text-gray-500 capitalize">{userRole}</div>
-            </div>
+            <span className="text-sm text-gray-600">Role:</span>
+            <Select value={currentRole} onValueChange={handleRoleChange}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="user">User</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>

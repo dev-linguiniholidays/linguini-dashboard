@@ -1,37 +1,49 @@
 'use client';
 
-import { Customer, Comment } from '@/lib/mockData';
+import { useState, useEffect } from 'react';
+import { Customer } from '@/lib/mockData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Edit, X, MessageSquare, Send } from 'lucide-react';
-import { statusOptions, destinationOptions, packageTypeOptions, leadTypeOptions } from '@/lib/mockData';
-import { useState, useEffect } from 'react';
-import { getCurrentUser } from '@/lib/roleUtils';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Edit, Save, X, MessageSquare, Send } from 'lucide-react';
 
 interface CustomerDetailsProps {
-  customer: Customer | null;
+  customer: Customer;
   isOpen: boolean;
   onClose: () => void;
   onUpdate: (id: string, updates: Partial<Customer>) => void;
-  onAddComment: (customerId: string, text: string, userId: string, userName: string) => void;
+  onAddComment: (customerId: string, text: string) => void;
   isLoading?: boolean;
 }
+
+const statusColors = {
+  fresh: 'bg-blue-100 text-blue-800',
+  'no-response': 'bg-gray-100 text-gray-800',
+  ongoing: 'bg-yellow-100 text-yellow-800',
+  converted: 'bg-green-100 text-green-800',
+  dead: 'bg-red-100 text-red-800',
+  future: 'bg-purple-100 text-purple-800',
+  hot: 'bg-orange-100 text-orange-800',
+};
+
+const packageTypeColors = {
+  private: 'bg-indigo-100 text-indigo-800',
+  group: 'bg-pink-100 text-pink-800',
+};
+
+const leadTypeColors = {
+  calling: 'bg-blue-100 text-blue-800',
+  instagram: 'bg-pink-100 text-pink-800',
+  referral: 'bg-green-100 text-green-800',
+  website: 'bg-purple-100 text-purple-800',
+  facebook: 'bg-blue-100 text-blue-800',
+  'walk-in': 'bg-orange-100 text-orange-800',
+  other: 'bg-gray-100 text-gray-800',
+};
 
 export const CustomerDetails = ({
   customer,
@@ -42,24 +54,21 @@ export const CustomerDetails = ({
   isLoading = false,
 }: CustomerDetailsProps) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [newComment, setNewComment] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
     destination: '',
-    status: 'fresh' as const,
+    status: 'fresh' as Customer['status'],
     description: '',
     travelStartDate: '',
     travelEndDate: '',
     leadCreationDate: '',
     numberOfPax: 1,
-    packageType: 'private' as const,
-    leadType: 'calling' as const,
+    packageType: 'private' as Customer['packageType'],
+    leadType: 'calling' as Customer['leadType'],
   });
+  const [newComment, setNewComment] = useState('');
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // Update form data when customer changes
   useEffect(() => {
     if (customer) {
       setFormData({
@@ -70,7 +79,7 @@ export const CustomerDetails = ({
         description: customer.description,
         travelStartDate: customer.travelStartDate,
         travelEndDate: customer.travelEndDate,
-        leadCreationDate: customer.leadCreationDate,
+        leadCreationDate: customer.leadCreationDate.split('T')[0],
         numberOfPax: customer.numberOfPax,
         packageType: customer.packageType,
         leadType: customer.leadType,
@@ -78,433 +87,322 @@ export const CustomerDetails = ({
     }
   }, [customer]);
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone is required';
-    } else if (!/^\+?[\d\s\-\(\)]+$/.test(formData.phone)) {
-      newErrors.phone = 'Please enter a valid phone number';
-    }
-
-    if (!formData.destination.trim()) {
-      newErrors.destination = 'Destination is required';
-    }
-
-    if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
   const handleSave = () => {
-    if (!customer || !validateForm()) {
-      return;
-    }
-
-    onUpdate(customer.id, formData);
+    onUpdate(customer.id, {
+      ...formData,
+      leadCreationDate: new Date(formData.leadCreationDate).toISOString(),
+    });
     setIsEditing(false);
-  };
-
-  const handleCancel = () => {
-    if (customer) {
-      setFormData({
-        name: customer.name,
-        phone: customer.phone,
-        destination: customer.destination,
-        status: customer.status,
-        description: customer.description,
-        travelStartDate: customer.travelStartDate,
-        travelEndDate: customer.travelEndDate,
-        leadCreationDate: customer.leadCreationDate,
-        numberOfPax: customer.numberOfPax,
-        packageType: customer.packageType,
-        leadType: customer.leadType,
-      });
-    }
-    setErrors({});
-    setIsEditing(false);
-  };
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
   };
 
   const handleAddComment = () => {
-    if (!customer || !newComment.trim()) return;
-    
-    const currentUser = getCurrentUser();
-    onAddComment(customer.id, newComment.trim(), currentUser.id, currentUser.name);
-    setNewComment('');
+    if (newComment.trim()) {
+      onAddComment(customer.id, newComment.trim());
+      setNewComment('');
+    }
   };
 
-  if (!customer) return null;
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      fresh: 'Fresh',
+      'no-response': 'No Response',
+      ongoing: 'Ongoing',
+      converted: 'Converted',
+      dead: 'Dead',
+      future: 'Future',
+      hot: 'Hot',
+    };
+    return labels[status] || status;
+  };
+
+  const getPackageTypeLabel = (type: string) => {
+    return type === 'private' ? 'Private' : 'Group';
+  };
+
+  const getLeadTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      calling: 'Calling',
+      instagram: 'Instagram',
+      referral: 'Referral',
+      website: 'Website',
+      facebook: 'Facebook',
+      'walk-in': 'Walk-in',
+      other: 'Other',
+    };
+    return labels[type] || type;
+  };
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle>Customer Details</DialogTitle>
-            <div className="flex items-center space-x-2">
-              {!isEditing ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsEditing(true)}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-              ) : (
-                <div className="flex space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCancel}
-                  >
-                    <X className="h-4 w-4 mr-2" />
+            <DialogTitle className="text-xl font-semibold">
+              Customer Details
+            </DialogTitle>
+            <div className="flex gap-2">
+              {isEditing ? (
+                <>
+                  <Button onClick={handleSave} disabled={isLoading} size="sm">
+                    <Save className="h-4 w-4 mr-1" />
+                    Save
+                  </Button>
+                  <Button onClick={() => setIsEditing(false)} variant="outline" size="sm">
+                    <X className="h-4 w-4 mr-1" />
                     Cancel
                   </Button>
-                  <Button
-                    size="sm"
-                    onClick={handleSave}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? 'Saving...' : 'Save'}
-                  </Button>
-                </div>
+                </>
+              ) : (
+                <Button onClick={() => setIsEditing(true)} size="sm">
+                  <Edit className="h-4 w-4 mr-1" />
+                  Edit
+                </Button>
               )}
             </div>
           </div>
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
+              <Label>Name</Label>
               {isEditing ? (
                 <Input
-                  id="name"
                   value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  className={errors.name ? 'border-red-500' : ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 />
               ) : (
-                <div className="p-2 bg-gray-50 rounded-md">{customer.name}</div>
-              )}
-              {isEditing && errors.name && (
-                <p className="text-sm text-red-500">{errors.name}</p>
+                <p className="text-sm font-medium">{customer.name}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone</Label>
+              <Label>Phone</Label>
               {isEditing ? (
                 <Input
-                  id="phone"
                   value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  className={errors.phone ? 'border-red-500' : ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                 />
               ) : (
-                <div className="p-2 bg-gray-50 rounded-md">{customer.phone}</div>
-              )}
-              {isEditing && errors.phone && (
-                <p className="text-sm text-red-500">{errors.phone}</p>
+                <p className="text-sm font-medium">{customer.phone}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="destination">Destination</Label>
-              {isEditing ? (
-                <Select
-                  value={formData.destination}
-                  onValueChange={(value) => handleInputChange('destination', value)}
-                >
-                  <SelectTrigger className={errors.destination ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Select destination" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {destinationOptions.map((destination) => (
-                      <SelectItem key={destination} value={destination}>
-                        {destination}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <div className="p-2 bg-gray-50 rounded-md">{customer.destination}</div>
-              )}
-              {isEditing && errors.destination && (
-                <p className="text-sm text-red-500">{errors.destination}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              {isEditing ? (
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) => handleInputChange('status', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <div className="p-2 bg-gray-50 rounded-md">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    customer.status === 'fresh' ? 'bg-blue-100 text-blue-800' :
-                    customer.status === 'no-response' ? 'bg-gray-100 text-gray-800' :
-                    customer.status === 'ongoing' ? 'bg-yellow-100 text-yellow-800' :
-                    customer.status === 'converted' ? 'bg-green-100 text-green-800' :
-                    customer.status === 'dead' ? 'bg-red-100 text-red-800' :
-                    customer.status === 'future' ? 'bg-purple-100 text-purple-800' :
-                    customer.status === 'hot' ? 'bg-orange-100 text-orange-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {customer.status === 'no-response' ? 'No Response' : customer.status.charAt(0).toUpperCase() + customer.status.slice(1)}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            {isEditing ? (
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                className={errors.description ? 'border-red-500' : ''}
-                rows={4}
-              />
-            ) : (
-              <div className="p-2 bg-gray-50 rounded-md min-h-[100px]">
-                {customer.description}
-              </div>
-            )}
-            {isEditing && errors.description && (
-              <p className="text-sm text-red-500">{errors.description}</p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="travelStartDate">Travel Start Date</Label>
+              <Label>Destination</Label>
               {isEditing ? (
                 <Input
-                  id="travelStartDate"
+                  value={formData.destination}
+                  onChange={(e) => setFormData(prev => ({ ...prev, destination: e.target.value }))}
+                />
+              ) : (
+                <p className="text-sm font-medium">{customer.destination}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Status</Label>
+              {isEditing ? (
+                <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as Customer['status'] }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fresh">Fresh</SelectItem>
+                    <SelectItem value="no-response">No Response</SelectItem>
+                    <SelectItem value="ongoing">Ongoing</SelectItem>
+                    <SelectItem value="converted">Converted</SelectItem>
+                    <SelectItem value="dead">Dead</SelectItem>
+                    <SelectItem value="future">Future</SelectItem>
+                    <SelectItem value="hot">Hot</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Badge className={statusColors[customer.status]}>
+                  {getStatusLabel(customer.status)}
+                </Badge>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Travel Start Date</Label>
+              {isEditing ? (
+                <Input
                   type="date"
                   value={formData.travelStartDate}
-                  onChange={(e) => handleInputChange('travelStartDate', e.target.value)}
-                  className={errors.travelStartDate ? 'border-red-500' : ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, travelStartDate: e.target.value }))}
                 />
               ) : (
-                <div className="p-2 bg-gray-50 rounded-md">
-                  {new Date(customer.travelStartDate).toLocaleDateString()}
-                </div>
-              )}
-              {isEditing && errors.travelStartDate && (
-                <p className="text-sm text-red-500">{errors.travelStartDate}</p>
+                <p className="text-sm font-medium">{formatDate(customer.travelStartDate)}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="travelEndDate">Travel End Date</Label>
+              <Label>Travel End Date</Label>
               {isEditing ? (
                 <Input
-                  id="travelEndDate"
                   type="date"
                   value={formData.travelEndDate}
-                  onChange={(e) => handleInputChange('travelEndDate', e.target.value)}
-                  className={errors.travelEndDate ? 'border-red-500' : ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, travelEndDate: e.target.value }))}
                 />
               ) : (
-                <div className="p-2 bg-gray-50 rounded-md">
-                  {new Date(customer.travelEndDate).toLocaleDateString()}
-                </div>
-              )}
-              {isEditing && errors.travelEndDate && (
-                <p className="text-sm text-red-500">{errors.travelEndDate}</p>
+                <p className="text-sm font-medium">{formatDate(customer.travelEndDate)}</p>
               )}
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="numberOfPax">Number of Passengers</Label>
+              <Label>Number of Passengers</Label>
               {isEditing ? (
                 <Input
-                  id="numberOfPax"
                   type="number"
                   min="1"
                   value={formData.numberOfPax}
-                  onChange={(e) => handleInputChange('numberOfPax', e.target.value)}
-                  className={errors.numberOfPax ? 'border-red-500' : ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, numberOfPax: parseInt(e.target.value) || 1 }))}
                 />
               ) : (
-                <div className="p-2 bg-gray-50 rounded-md">{customer.numberOfPax}</div>
-              )}
-              {isEditing && errors.numberOfPax && (
-                <p className="text-sm text-red-500">{errors.numberOfPax}</p>
+                <p className="text-sm font-medium">{customer.numberOfPax}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="packageType">Package Type</Label>
+              <Label>Package Type</Label>
               {isEditing ? (
-                <Select
-                  value={formData.packageType}
-                  onValueChange={(value) => handleInputChange('packageType', value)}
-                >
+                <Select value={formData.packageType} onValueChange={(value) => setFormData(prev => ({ ...prev, packageType: value as Customer['packageType'] }))}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select package type" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {packageTypeOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="private">Private</SelectItem>
+                    <SelectItem value="group">Group</SelectItem>
                   </SelectContent>
                 </Select>
               ) : (
-                <div className="p-2 bg-gray-50 rounded-md">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    customer.packageType === 'private' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
-                  }`}>
-                    {customer.packageType.charAt(0).toUpperCase() + customer.packageType.slice(1)}
-                  </span>
-                </div>
+                <Badge className={packageTypeColors[customer.packageType]}>
+                  {getPackageTypeLabel(customer.packageType)}
+                </Badge>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Lead Type</Label>
+              {isEditing ? (
+                <Select value={formData.leadType} onValueChange={(value) => setFormData(prev => ({ ...prev, leadType: value as Customer['leadType'] }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="calling">Calling</SelectItem>
+                    <SelectItem value="instagram">Instagram</SelectItem>
+                    <SelectItem value="referral">Referral</SelectItem>
+                    <SelectItem value="website">Website</SelectItem>
+                    <SelectItem value="facebook">Facebook</SelectItem>
+                    <SelectItem value="walk-in">Walk-in</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Badge className={leadTypeColors[customer.leadType]}>
+                  {getLeadTypeLabel(customer.leadType)}
+                </Badge>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Lead Creation Date</Label>
+              {isEditing ? (
+                <Input
+                  type="date"
+                  value={formData.leadCreationDate}
+                  onChange={(e) => setFormData(prev => ({ ...prev, leadCreationDate: e.target.value }))}
+                />
+              ) : (
+                <p className="text-sm font-medium">{formatDate(customer.leadCreationDate)}</p>
               )}
             </div>
           </div>
 
+          {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="leadType">Lead Type</Label>
+            <Label>Description</Label>
             {isEditing ? (
-              <Select
-                value={formData.leadType}
-                onValueChange={(value) => handleInputChange('leadType', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select lead type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {leadTypeOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Textarea
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                rows={3}
+              />
             ) : (
-              <div className="p-2 bg-gray-50 rounded-md">
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  customer.leadType === 'calling' ? 'bg-green-100 text-green-800' :
-                  customer.leadType === 'instagram' ? 'bg-pink-100 text-pink-800' :
-                  customer.leadType === 'referral' ? 'bg-blue-100 text-blue-800' :
-                  customer.leadType === 'website' ? 'bg-gray-100 text-gray-800' :
-                  customer.leadType === 'facebook' ? 'bg-blue-100 text-blue-800' :
-                  customer.leadType === 'walk-in' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
-                  {customer.leadType === 'walk-in' ? 'Walk-in' : customer.leadType.charAt(0).toUpperCase() + customer.leadType.slice(1)}
-                </span>
-              </div>
+              <p className="text-sm text-gray-600">{customer.description || 'No description provided'}</p>
             )}
-          </div>
-
-          <div className="space-y-2">
-            <Label>Lead Creation Date</Label>
-            <div className="p-2 bg-gray-50 rounded-md">
-              {new Date(customer.leadCreationDate).toLocaleString()}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Last Updated</Label>
-            <div className="p-2 bg-gray-50 rounded-md">
-              {new Date(customer.updatedAt).toLocaleString()}
-            </div>
           </div>
 
           {/* Comments Section */}
           <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <MessageSquare className="h-5 w-5 text-gray-600" />
-              <Label className="text-lg font-semibold">Comments ({customer.comments.length})</Label>
+            <div className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              <h3 className="text-lg font-semibold">Comments ({customer.comments.length})</h3>
             </div>
-            
+
             {/* Add Comment */}
-            <div className="space-y-2">
-              <Label htmlFor="newComment">Add Comment</Label>
-              <div className="flex space-x-2">
-                <Textarea
-                  id="newComment"
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Add a comment..."
-                  rows={2}
-                  className="flex-1"
-                />
-                <Button
-                  onClick={handleAddComment}
-                  disabled={!newComment.trim() || isLoading}
-                  size="sm"
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
+            <div className="flex gap-2">
+              <Textarea
+                placeholder="Add a comment..."
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                rows={2}
+                className="flex-1"
+              />
+              <Button onClick={handleAddComment} disabled={!newComment.trim()}>
+                <Send className="h-4 w-4" />
+              </Button>
             </div>
 
             {/* Comments List */}
             <div className="space-y-3 max-h-60 overflow-y-auto">
               {customer.comments.length === 0 ? (
-                <div className="text-center text-gray-500 py-4">
-                  No comments yet. Add the first comment above.
-                </div>
+                <p className="text-sm text-gray-500 italic">No comments yet</p>
               ) : (
                 customer.comments.map((comment) => (
                   <div key={comment.id} className="border rounded-lg p-3 bg-gray-50">
                     <div className="flex justify-between items-start mb-2">
-                      <div className="font-medium text-sm">{comment.userName}</div>
-                      <div className="text-xs text-gray-500">
-                        {new Date(comment.timestamp).toLocaleString()}
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm">{comment.userName}</span>
+                        <span className="text-xs text-gray-500">
+                          {formatDateTime(comment.timestamp)}
+                        </span>
                       </div>
                     </div>
-                    <div className="text-sm text-gray-700">{comment.text}</div>
+                    <p className="text-sm text-gray-700">{comment.text}</p>
                   </div>
                 ))
               )}
             </div>
           </div>
-        </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Close
-          </Button>
-        </DialogFooter>
+          {/* Last Updated */}
+          <div className="text-xs text-gray-500 border-t pt-4">
+            Last updated: {formatDateTime(customer.updatedAt)}
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

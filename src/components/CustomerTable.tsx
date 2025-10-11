@@ -1,43 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-  getPaginationRowModel,
-  getSortedRowModel,
-  SortingState,
-} from '@tanstack/react-table';
 import { Customer } from '@/lib/mockData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Edit, Trash2, Eye, MessageSquare } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Search, Plus, Edit, Trash2, MessageSquare } from 'lucide-react';
 import { RoleGuard } from './RoleGuard';
-import { statusOptions, destinationOptions, packageTypeOptions, leadTypeOptions } from '@/lib/mockData';
 
 interface CustomerTableProps {
   customers: Customer[];
   onEdit: (customer: Customer) => void;
   onDelete: (id: string) => void;
-  onView: (customer: Customer) => void;
-  onComment: (customer: Customer) => void;
+  onAdd: () => void;
   searchTerm: string;
   onSearchChange: (term: string) => void;
   statusFilter: string;
@@ -45,17 +22,42 @@ interface CustomerTableProps {
   destinationFilter: string;
   onDestinationFilterChange: (destination: string) => void;
   packageTypeFilter: string;
-  onPackageTypeFilterChange: (packageType: string) => void;
+  onPackageTypeFilterChange: (type: string) => void;
   leadTypeFilter: string;
-  onLeadTypeFilterChange: (leadType: string) => void;
+  onLeadTypeFilterChange: (type: string) => void;
+  onViewComments: (customer: Customer) => void;
 }
+
+const statusColors = {
+  fresh: 'bg-blue-100 text-blue-800',
+  'no-response': 'bg-gray-100 text-gray-800',
+  ongoing: 'bg-yellow-100 text-yellow-800',
+  converted: 'bg-green-100 text-green-800',
+  dead: 'bg-red-100 text-red-800',
+  future: 'bg-purple-100 text-purple-800',
+  hot: 'bg-orange-100 text-orange-800',
+};
+
+const packageTypeColors = {
+  private: 'bg-indigo-100 text-indigo-800',
+  group: 'bg-pink-100 text-pink-800',
+};
+
+const leadTypeColors = {
+  calling: 'bg-blue-100 text-blue-800',
+  instagram: 'bg-pink-100 text-pink-800',
+  referral: 'bg-green-100 text-green-800',
+  website: 'bg-purple-100 text-purple-800',
+  facebook: 'bg-blue-100 text-blue-800',
+  'walk-in': 'bg-orange-100 text-orange-800',
+  other: 'bg-gray-100 text-gray-800',
+};
 
 export const CustomerTable = ({
   customers,
   onEdit,
   onDelete,
-  onView,
-  onComment,
+  onAdd,
   searchTerm,
   onSearchChange,
   statusFilter,
@@ -66,380 +68,236 @@ export const CustomerTable = ({
   onPackageTypeFilterChange,
   leadTypeFilter,
   onLeadTypeFilterChange,
+  onViewComments,
 }: CustomerTableProps) => {
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  const columns: ColumnDef<Customer>[] = [
-    {
-      accessorKey: 'name',
-      header: 'Name',
-      cell: ({ row }) => (
-        <div className="font-medium">{row.getValue('name')}</div>
-      ),
-    },
-    {
-      accessorKey: 'phone',
-      header: 'Phone',
-      cell: ({ row }) => (
-        <div className="text-sm text-gray-600">{row.getValue('phone')}</div>
-      ),
-    },
-    {
-      accessorKey: 'destination',
-      header: 'Destination',
-      cell: ({ row }) => (
-        <div className="text-sm">{row.getValue('destination')}</div>
-      ),
-    },
-    {
-      accessorKey: 'status',
-      header: 'Status',
-      cell: ({ row }) => {
-        const status = row.getValue('status') as string;
-        const statusColors = {
-          fresh: 'bg-blue-100 text-blue-800',
-          'no-response': 'bg-gray-100 text-gray-800',
-          ongoing: 'bg-yellow-100 text-yellow-800',
-          converted: 'bg-green-100 text-green-800',
-          dead: 'bg-red-100 text-red-800',
-          future: 'bg-purple-100 text-purple-800',
-          hot: 'bg-orange-100 text-orange-800',
-        };
-        return (
-          <span
-            className={`px-2 py-1 rounded-full text-xs font-medium ${
-              statusColors[status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'
-            }`}
-          >
-            {status === 'no-response' ? 'No Response' : status.charAt(0).toUpperCase() + status.slice(1)}
-          </span>
-        );
-      },
-    },
-    {
-      accessorKey: 'travelStartDate',
-      header: 'Travel Start',
-      cell: ({ row }) => {
-        const date = new Date(row.getValue('travelStartDate'));
-        return (
-          <div className="text-sm">
-            {date.toLocaleDateString()}
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: 'travelEndDate',
-      header: 'Travel End',
-      cell: ({ row }) => {
-        const date = new Date(row.getValue('travelEndDate'));
-        return (
-          <div className="text-sm">
-            {date.toLocaleDateString()}
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: 'numberOfPax',
-      header: 'Pax',
-      cell: ({ row }) => (
-        <div className="text-sm font-medium">
-          {row.getValue('numberOfPax')}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'packageType',
-      header: 'Package',
-      cell: ({ row }) => {
-        const packageType = row.getValue('packageType') as string;
-        return (
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-            packageType === 'private' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
-          }`}>
-            {packageType.charAt(0).toUpperCase() + packageType.slice(1)}
-          </span>
-        );
-      },
-    },
-    {
-      accessorKey: 'leadType',
-      header: 'Lead Type',
-      cell: ({ row }) => {
-        const leadType = row.getValue('leadType') as string;
-        const leadTypeColors = {
-          calling: 'bg-green-100 text-green-800',
-          instagram: 'bg-pink-100 text-pink-800',
-          referral: 'bg-blue-100 text-blue-800',
-          website: 'bg-gray-100 text-gray-800',
-          facebook: 'bg-blue-100 text-blue-800',
-          'walk-in': 'bg-yellow-100 text-yellow-800',
-          other: 'bg-gray-100 text-gray-800',
-        };
-        return (
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-            leadTypeColors[leadType as keyof typeof leadTypeColors] || 'bg-gray-100 text-gray-800'
-          }`}>
-            {leadType === 'walk-in' ? 'Walk-in' : leadType.charAt(0).toUpperCase() + leadType.slice(1)}
-          </span>
-        );
-      },
-    },
-    {
-      accessorKey: 'comments',
-      header: 'Comments',
-      cell: ({ row }) => {
-        const comments = row.getValue('comments') as any[];
-        return (
-          <div className="flex items-center space-x-1">
-            <span className="text-sm text-gray-600">{comments.length}</span>
-            <MessageSquare className="h-4 w-4 text-gray-400" />
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: 'leadCreationDate',
-      header: 'Lead Created',
-      cell: ({ row }) => {
-        const date = new Date(row.getValue('leadCreationDate'));
-        return (
-          <div className="text-sm text-gray-500">
-            {date.toLocaleDateString()}
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: 'description',
-      header: 'Description',
-      cell: ({ row }) => (
-        <div className="text-sm text-gray-600 max-w-xs truncate">
-          {row.getValue('description')}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'updatedAt',
-      header: 'Updated',
-      cell: ({ row }) => {
-        const date = new Date(row.getValue('updatedAt'));
-        return (
-          <div className="text-sm text-gray-500">
-            {date.toLocaleDateString()}
-          </div>
-        );
-      },
-    },
-    {
-      id: 'actions',
-      header: 'Actions',
-      cell: ({ row }) => {
-        const customer = row.original;
-        return (
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onView(customer)}
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onComment(customer)}
-            >
-              <MessageSquare className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onEdit(customer)}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            <RoleGuard allowedRoles={['admin']}>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onDelete(customer.id)}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </RoleGuard>
-          </div>
-        );
-      },
-    },
-  ];
+  const totalPages = Math.ceil(customers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentCustomers = customers.slice(startIndex, endIndex);
 
-  const table = useReactTable({
-    data: customers,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    onSortingChange: setSorting,
-    state: {
-      sorting,
-    },
-    initialState: {
-      pagination: {
-        pageSize: 10,
-      },
-    },
-  });
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      fresh: 'Fresh',
+      'no-response': 'No Response',
+      ongoing: 'Ongoing',
+      converted: 'Converted',
+      dead: 'Dead',
+      future: 'Future',
+      hot: 'Hot',
+    };
+    return labels[status] || status;
+  };
+
+  const getPackageTypeLabel = (type: string) => {
+    return type === 'private' ? 'Private' : 'Group';
+  };
+
+  const getLeadTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      calling: 'Calling',
+      instagram: 'Instagram',
+      referral: 'Referral',
+      website: 'Website',
+      facebook: 'Facebook',
+      'walk-in': 'Walk-in',
+      other: 'Other',
+    };
+    return labels[type] || type;
+  };
 
   return (
     <div className="space-y-4">
       {/* Search and Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
             placeholder="Search customers..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="max-w-sm"
+            className="pl-10"
           />
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              {statusOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={destinationFilter} onValueChange={onDestinationFilterChange}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="Destination" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Destinations</SelectItem>
-              {destinationOptions.map((destination) => (
-                <SelectItem key={destination} value={destination}>
-                  {destination}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={packageTypeFilter} onValueChange={onPackageTypeFilterChange}>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="Package" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Packages</SelectItem>
-              {packageTypeOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={leadTypeFilter} onValueChange={onLeadTypeFilterChange}>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="Lead Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Lead Types</SelectItem>
-              {leadTypeOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        
+        <Select value={statusFilter} onValueChange={onStatusFilterChange}>
+          <SelectTrigger className="w-full sm:w-40">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="fresh">Fresh</SelectItem>
+            <SelectItem value="no-response">No Response</SelectItem>
+            <SelectItem value="ongoing">Ongoing</SelectItem>
+            <SelectItem value="converted">Converted</SelectItem>
+            <SelectItem value="dead">Dead</SelectItem>
+            <SelectItem value="future">Future</SelectItem>
+            <SelectItem value="hot">Hot</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={destinationFilter} onValueChange={onDestinationFilterChange}>
+          <SelectTrigger className="w-full sm:w-40">
+            <SelectValue placeholder="Destination" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Destinations</SelectItem>
+            <SelectItem value="Paris, France">Paris, France</SelectItem>
+            <SelectItem value="Tokyo, Japan">Tokyo, Japan</SelectItem>
+            <SelectItem value="Bali, Indonesia">Bali, Indonesia</SelectItem>
+            <SelectItem value="Rome, Italy">Rome, Italy</SelectItem>
+            <SelectItem value="New York, USA">New York, USA</SelectItem>
+            <SelectItem value="Dubai, UAE">Dubai, UAE</SelectItem>
+            <SelectItem value="London, UK">London, UK</SelectItem>
+            <SelectItem value="Barcelona, Spain">Barcelona, Spain</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={packageTypeFilter} onValueChange={onPackageTypeFilterChange}>
+          <SelectTrigger className="w-full sm:w-40">
+            <SelectValue placeholder="Package" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Packages</SelectItem>
+            <SelectItem value="private">Private</SelectItem>
+            <SelectItem value="group">Group</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={leadTypeFilter} onValueChange={onLeadTypeFilterChange}>
+          <SelectTrigger className="w-full sm:w-40">
+            <SelectValue placeholder="Lead Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Lead Types</SelectItem>
+            <SelectItem value="calling">Calling</SelectItem>
+            <SelectItem value="instagram">Instagram</SelectItem>
+            <SelectItem value="referral">Referral</SelectItem>
+            <SelectItem value="website">Website</SelectItem>
+            <SelectItem value="facebook">Facebook</SelectItem>
+            <SelectItem value="walk-in">Walk-in</SelectItem>
+            <SelectItem value="other">Other</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Button onClick={onAdd} className="w-full sm:w-auto">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Customer
+        </Button>
       </div>
 
       {/* Table */}
-      <div className="rounded-md border">
+      <div className="border rounded-lg">
         <Table>
           <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Phone</TableHead>
+              <TableHead>Destination</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Travel Start</TableHead>
+              <TableHead>Travel End</TableHead>
+              <TableHead>Pax</TableHead>
+              <TableHead>Package</TableHead>
+              <TableHead>Lead Type</TableHead>
+              <TableHead>Lead Created</TableHead>
+              <TableHead>Comments</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && 'selected'}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  No customers found.
+            {currentCustomers.map((customer) => (
+              <TableRow key={customer.id}>
+                <TableCell className="font-medium">{customer.name}</TableCell>
+                <TableCell>{customer.phone}</TableCell>
+                <TableCell>{customer.destination}</TableCell>
+                <TableCell>
+                  <Badge className={statusColors[customer.status]}>
+                    {getStatusLabel(customer.status)}
+                  </Badge>
+                </TableCell>
+                <TableCell>{formatDate(customer.travelStartDate)}</TableCell>
+                <TableCell>{formatDate(customer.travelEndDate)}</TableCell>
+                <TableCell>{customer.numberOfPax}</TableCell>
+                <TableCell>
+                  <Badge className={packageTypeColors[customer.packageType]}>
+                    {getPackageTypeLabel(customer.packageType)}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge className={leadTypeColors[customer.leadType]}>
+                    {getLeadTypeLabel(customer.leadType)}
+                  </Badge>
+                </TableCell>
+                <TableCell>{formatDate(customer.leadCreationDate)}</TableCell>
+                <TableCell>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onViewComments(customer)}
+                    className="flex items-center gap-1"
+                  >
+                    <MessageSquare className="h-3 w-3" />
+                    {customer.comments.length}
+                  </Button>
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onEdit(customer)}
+                    >
+                      <Edit className="h-3 w-3" />
+                    </Button>
+                    <RoleGuard allowedRoles={['admin']}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onDelete(customer.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </RoleGuard>
+                  </div>
                 </TableCell>
               </TableRow>
-            )}
+            ))}
           </TableBody>
         </Table>
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-gray-500">
-          Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{' '}
-          {Math.min(
-            (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
-            table.getFilteredRowModel().rows.length
-          )}{' '}
-          of {table.getFilteredRowModel().rows.length} customers
-        </div>
-        <div className="flex items-center space-x-2">
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
           >
             Previous
           </Button>
+          <span className="text-sm text-gray-600">
+            Page {currentPage} of {totalPages}
+          </span>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
           >
             Next
           </Button>
         </div>
-      </div>
+      )}
     </div>
   );
 };

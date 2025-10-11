@@ -1,7 +1,7 @@
 'use client';
 
-import { ReactNode, useEffect, useState } from 'react';
-import { UserRole, getStoredRole } from '@/lib/roleUtils';
+import { ReactNode } from 'react';
+import { UserRole } from '@/lib/roleUtils';
 
 interface RoleGuardProps {
   children: ReactNode;
@@ -10,59 +10,20 @@ interface RoleGuardProps {
 }
 
 export const RoleGuard = ({ children, allowedRoles, fallback = null }: RoleGuardProps) => {
-  const [userRole, setUserRole] = useState<UserRole>('user');
-  const [isClient, setIsClient] = useState(false);
+  // For demo purposes, we'll use localStorage directly
+  // In a real app, this would come from a context or auth state
+  const getCurrentRole = (): UserRole => {
+    if (typeof window === 'undefined') return 'user';
+    const stored = localStorage.getItem('linguini-crm-user-role');
+    return (stored as UserRole) || 'user';
+  };
 
-  useEffect(() => {
-    setIsClient(true);
-    setUserRole(getStoredRole());
-  }, []);
+  const currentRole = getCurrentRole();
+  const hasPermission = allowedRoles.includes(currentRole);
 
-  if (!isClient) {
-    return null; // Prevent hydration mismatch
-  }
-
-  if (!allowedRoles.includes(userRole)) {
+  if (!hasPermission) {
     return <>{fallback}</>;
   }
 
   return <>{children}</>;
-};
-
-interface RoleToggleProps {
-  onRoleChange: (role: UserRole) => void;
-}
-
-export const RoleToggle = ({ onRoleChange }: RoleToggleProps) => {
-  const [userRole, setUserRole] = useState<UserRole>('user');
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-    const role = getStoredRole();
-    setUserRole(role);
-  }, []);
-
-  const handleRoleChange = (role: UserRole) => {
-    setUserRole(role);
-    onRoleChange(role);
-  };
-
-  if (!isClient) {
-    return null;
-  }
-
-  return (
-    <div className="flex items-center space-x-2">
-      <span className="text-sm text-gray-600">Role:</span>
-      <select
-        value={userRole}
-        onChange={(e) => handleRoleChange(e.target.value as UserRole)}
-        className="px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-      >
-        <option value="user">User</option>
-        <option value="admin">Admin</option>
-      </select>
-    </div>
-  );
 };
