@@ -133,14 +133,14 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Recent Customers Table */}
+      {/* All Customers Table */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">Recent Customers</h2>
+          <h2 className="text-xl font-semibold text-gray-900">All Customers</h2>
         </div>
         
         <CustomerTable
-          customers={customers.slice(0, 5)} // Show only first 5 for dashboard
+          customers={customers}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onAdd={handleAdd}

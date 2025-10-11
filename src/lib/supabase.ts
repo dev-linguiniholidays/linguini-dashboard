@@ -1,0 +1,95 @@
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://your-project.supabase.co'
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'your-anon-key'
+
+// Check if we have valid Supabase credentials
+const hasValidCredentials = supabaseUrl !== 'https://your-project.supabase.co' && supabaseAnonKey !== 'your-anon-key'
+
+export const supabase = hasValidCredentials ? createClient(supabaseUrl, supabaseAnonKey) : null
+
+// Mock user for development
+const mockUser = {
+  id: 'mock-user-id',
+  email: 'admin@linguiniholidays.com',
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+  aud: 'authenticated',
+  role: 'authenticated',
+  app_metadata: {},
+  user_metadata: {},
+  identities: [],
+  factors: [],
+  email_confirmed_at: new Date().toISOString(),
+  last_sign_in_at: new Date().toISOString(),
+  phone: '',
+  phone_confirmed_at: undefined,
+  confirmed_at: new Date().toISOString(),
+  recovery_sent_at: undefined,
+  new_email: undefined,
+  invited_at: undefined,
+  action_link: undefined,
+  email_change_sent_at: undefined,
+  new_phone: undefined,
+  phone_change_sent_at: undefined,
+  reauthentication_sent_at: undefined,
+  reauthentication_confirm: undefined,
+  is_anonymous: false,
+}
+
+// Auth helper functions
+export const signIn = async (email: string, password: string) => {
+  if (!hasValidCredentials) {
+    // Mock authentication for development
+    if (email === 'admin@linguiniholidays.com' && password === 'admin123') {
+      // Store mock user in localStorage
+      localStorage.setItem('mock-user', JSON.stringify(mockUser))
+      return { data: { user: mockUser }, error: null }
+    } else {
+      return { data: null, error: { message: 'Invalid credentials' } }
+    }
+  }
+
+  const { data, error } = await supabase!.auth.signInWithPassword({
+    email,
+    password,
+  })
+  return { data, error }
+}
+
+export const signUp = async (email: string, password: string) => {
+  if (!hasValidCredentials) {
+    // Mock signup for development
+    const newUser = { ...mockUser, email, id: `mock-${Date.now()}` }
+    localStorage.setItem('mock-user', JSON.stringify(newUser))
+    return { data: { user: newUser }, error: null }
+  }
+
+  const { data, error } = await supabase!.auth.signUp({
+    email,
+    password,
+  })
+  return { data, error }
+}
+
+export const signOut = async () => {
+  if (!hasValidCredentials) {
+    // Mock signout for development
+    localStorage.removeItem('mock-user')
+    return { error: null }
+  }
+
+  const { error } = await supabase!.auth.signOut()
+  return { error }
+}
+
+export const getCurrentUser = async () => {
+  if (!hasValidCredentials) {
+    // Mock getCurrentUser for development
+    const storedUser = localStorage.getItem('mock-user')
+    return storedUser ? JSON.parse(storedUser) : null
+  }
+
+  const { data: { user } } = await supabase!.auth.getUser()
+  return user
+}

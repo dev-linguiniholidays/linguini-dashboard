@@ -19,7 +19,29 @@ export const Sidebar = () => {
     <div className="flex flex-col w-64 bg-white border-r border-gray-200 h-full">
       {/* Logo */}
       <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200">
-        <h1 className="text-xl font-bold text-gray-900">LinguiniHolidays</h1>
+        <div className="flex items-center space-x-3">
+          {/* Airplane with flight path */}
+          <div className="relative">
+            <svg width="28" height="28" viewBox="0 0 28 28" className="text-black">
+              {/* Flight path (dashed line) */}
+              <path
+                d="M5 9 Q10 6 14 10 Q18 16 23 12"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                fill="none"
+                strokeDasharray="2,2"
+              />
+              {/* Airplane */}
+              <path
+                d="M21 11 L24 13 L22 15 L21 13 L19 15 L21 11 Z"
+                fill="currentColor"
+              />
+            </svg>
+          </div>
+          
+          {/* Original title */}
+          <h1 className="text-xl font-bold text-gray-900">LinguiniHolidays</h1>
+        </div>
       </div>
 
       {/* Navigation */}

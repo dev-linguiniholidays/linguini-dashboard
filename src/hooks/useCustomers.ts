@@ -1,105 +1,85 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect, useRef } from 'react';
 import { Customer, Comment, mockCustomers } from '@/lib/mockData';
-import { useState } from 'react';
-
-// In-memory storage for demo purposes
-const customersData = [...mockCustomers];
 
 export const useCustomers = () => {
-  const queryClient = useQueryClient();
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const customersDataRef = useRef<Customer[]>([...mockCustomers]);
 
-  const customersQuery = useQuery({
-    queryKey: ['customers'],
-    queryFn: () => Promise.resolve(customersData),
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
+  useEffect(() => {
+    // Simulate loading
+    const timer = setTimeout(() => {
+      setCustomers(customersDataRef.current);
+      setIsLoading(false);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
-  const addCustomerMutation = useMutation({
-    mutationFn: (newCustomer: Omit<Customer, 'id' | 'updatedAt' | 'comments'>) => {
-      const customer: Customer = {
-        ...newCustomer,
-        id: Date.now().toString(),
-        updatedAt: new Date().toISOString(),
-        comments: [],
-      };
-      customersData.push(customer);
-      return Promise.resolve(customer);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
-    },
-  });
+  const addCustomer = (newCustomer: Omit<Customer, 'id' | 'updatedAt' | 'comments'>) => {
+    const customer: Customer = {
+      ...newCustomer,
+      id: Date.now().toString(),
+      updatedAt: new Date().toISOString(),
+      comments: [],
+    };
+    customersDataRef.current.push(customer);
+    setCustomers([...customersDataRef.current]);
+  };
 
-  const updateCustomerMutation = useMutation({
-    mutationFn: ({ id, ...updates }: Partial<Customer> & { id: string }) => {
-      const index = customersData.findIndex(c => c.id === id);
-      if (index === -1) throw new Error('Customer not found');
-      
-      customersData[index] = {
-        ...customersData[index],
-        ...updates,
-        updatedAt: new Date().toISOString(),
-      };
-      return Promise.resolve(customersData[index]);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
-    },
-  });
+  const updateCustomer = ({ id, ...updates }: Partial<Customer> & { id: string }) => {
+    const index = customersDataRef.current.findIndex(c => c.id === id);
+    if (index === -1) throw new Error('Customer not found');
+    
+    customersDataRef.current[index] = {
+      ...customersDataRef.current[index],
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+    setCustomers([...customersDataRef.current]);
+  };
 
-  const deleteCustomerMutation = useMutation({
-    mutationFn: (id: string) => {
-      const index = customersData.findIndex(c => c.id === id);
-      if (index === -1) throw new Error('Customer not found');
-      
-      customersData.splice(index, 1);
-      return Promise.resolve(id);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
-    },
-  });
+  const deleteCustomer = (id: string) => {
+    const index = customersDataRef.current.findIndex(c => c.id === id);
+    if (index === -1) throw new Error('Customer not found');
+    
+    customersDataRef.current.splice(index, 1);
+    setCustomers([...customersDataRef.current]);
+  };
 
-  const addCommentMutation = useMutation({
-    mutationFn: ({ customerId, text, userId, userName }: { 
-      customerId: string; 
-      text: string; 
-      userId: string; 
-      userName: string; 
-    }) => {
-      const customerIndex = customersData.findIndex(c => c.id === customerId);
-      if (customerIndex === -1) throw new Error('Customer not found');
-      
-      const newComment: Comment = {
-        id: Date.now().toString(),
-        text,
-        userId,
-        userName,
-        timestamp: new Date().toISOString(),
-      };
-      
-      customersData[customerIndex].comments.unshift(newComment); // Add to beginning for newest first
-      customersData[customerIndex].updatedAt = new Date().toISOString();
-      
-      return Promise.resolve(customersData[customerIndex]);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
-    },
-  });
+  const addComment = ({ customerId, text, userId, userName }: { 
+    customerId: string; 
+    text: string; 
+    userId: string; 
+    userName: string; 
+  }) => {
+    const customerIndex = customersDataRef.current.findIndex(c => c.id === customerId);
+    if (customerIndex === -1) throw new Error('Customer not found');
+    
+    const newComment: Comment = {
+      id: Date.now().toString(),
+      text,
+      userId,
+      userName,
+      timestamp: new Date().toISOString(),
+    };
+    
+    customersDataRef.current[customerIndex].comments.unshift(newComment);
+    customersDataRef.current[customerIndex].updatedAt = new Date().toISOString();
+    setCustomers([...customersDataRef.current]);
+  };
 
   return {
-    customers: customersData,
-    isLoading: customersQuery.isLoading,
-    error: customersQuery.error,
-    addCustomer: addCustomerMutation.mutate,
-    updateCustomer: updateCustomerMutation.mutate,
-    deleteCustomer: deleteCustomerMutation.mutate,
-    addComment: addCommentMutation.mutate,
-    isAdding: addCustomerMutation.isPending,
-    isUpdating: updateCustomerMutation.isPending,
-    isDeleting: deleteCustomerMutation.isPending,
-    isAddingComment: addCommentMutation.isPending,
+    customers,
+    isLoading,
+    error: null,
+    addCustomer,
+    updateCustomer,
+    deleteCustomer,
+    addComment,
+    isAdding: false,
+    isUpdating: false,
+    isDeleting: false,
+    isAddingComment: false,
   };
 };
 
