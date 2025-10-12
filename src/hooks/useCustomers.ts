@@ -6,6 +6,8 @@ import { supabase } from '@/lib/supabase';
 export const useCustomers = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [destinationOptions, setDestinationOptions] = useState<string[]>([]);
+  const [assigneeOptions, setAssigneeOptions] = useState<string[]>([]);
   const customersDataRef = useRef<Customer[]>([...mockCustomers]);
 
   useEffect(() => {
@@ -35,15 +37,36 @@ export const useCustomers = () => {
           );
           
           setCustomers(customersWithComments);
+
+          // Load dynamic filter options
+          try {
+            const [destinations, assignees] = await Promise.all([
+              customerService.getUniqueDestinations(),
+              customerService.getUniqueAssignees()
+            ]);
+            setDestinationOptions(destinations);
+            setAssigneeOptions(assignees);
+          } catch (filterError) {
+            console.error('Error loading filter options:', filterError);
+            // Set empty options - will show loader
+            setDestinationOptions([]);
+            setAssigneeOptions([]);
+          }
         } else {
           // Use mock data with a small delay to show loading
           await new Promise(resolve => setTimeout(resolve, 500));
           setCustomers(customersDataRef.current);
+          
+          // Set mock filter options
+          setDestinationOptions(['Mumbai', 'Delhi', 'Goa', 'Kerala', 'Rajasthan', 'Himachal Pradesh', 'Kashmir', 'Ladakh', 'Punjab', 'Gujarat', 'Karnataka', 'Tamil Nadu', 'West Bengal', 'Uttar Pradesh', 'Madhya Pradesh', 'Maharashtra', 'Andhra Pradesh', 'Telangana', 'Odisha', 'Bihar', 'Jharkhand', 'Chhattisgarh', 'Assam', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Tripura', 'Sikkim', 'Arunachal Pradesh', 'Uttarakhand', 'Haryana', 'Chandigarh', 'Puducherry', 'Daman and Diu', 'Dadra and Nagar Haveli', 'Lakshadweep', 'Andaman and Nicobar Islands']);
+          setAssigneeOptions(['none']); // Only 'none' for mock data
         }
       } catch (error) {
         console.error('Error loading customers:', error);
         // Fallback to mock data
         setCustomers(customersDataRef.current);
+        setDestinationOptions(['Mumbai', 'Delhi', 'Goa', 'Kerala', 'Rajasthan', 'Himachal Pradesh', 'Kashmir', 'Ladakh', 'Punjab', 'Gujarat', 'Karnataka', 'Tamil Nadu', 'West Bengal', 'Uttar Pradesh', 'Madhya Pradesh', 'Maharashtra', 'Andhra Pradesh', 'Telangana', 'Odisha', 'Bihar', 'Jharkhand', 'Chhattisgarh', 'Assam', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Tripura', 'Sikkim', 'Arunachal Pradesh', 'Uttarakhand', 'Haryana', 'Chandigarh', 'Puducherry', 'Daman and Diu', 'Dadra and Nagar Haveli', 'Lakshadweep', 'Andaman and Nicobar Islands']);
+        setAssigneeOptions(['none']); // Only 'none' for fallback
       } finally {
         setIsLoading(false);
       }
@@ -187,6 +210,8 @@ export const useCustomers = () => {
     isUpdating: false,
     isDeleting: false,
     isAddingComment: false,
+    destinationOptions,
+    assigneeOptions,
   };
 };
 
@@ -195,12 +220,14 @@ export const useCustomer = (id: string) => {
   return customers.find(customer => customer.id === id);
 };
 
-export const useCustomerSearch = (customers: Customer[]) => {
+export const useCustomerSearch = (customers: Customer[], destinationOptions: string[] = [], assigneeOptions: string[] = []) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [destinationFilter, setDestinationFilter] = useState<string>('all');
   const [packageTypeFilter, setPackageTypeFilter] = useState<string>('all');
   const [leadTypeFilter, setLeadTypeFilter] = useState<string>('all');
+  const [serviceFilter, setServiceFilter] = useState<string>('all');
+  const [assigneeFilter, setAssigneeFilter] = useState<string>('all');
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>(customers);
   const [isSearching, setIsSearching] = useState(false);
 
@@ -211,7 +238,9 @@ export const useCustomerSearch = (customers: Customer[]) => {
         statusFilter !== 'all' || 
         destinationFilter !== 'all' || 
         packageTypeFilter !== 'all' || 
-        leadTypeFilter !== 'all';
+        leadTypeFilter !== 'all' ||
+        serviceFilter !== 'all' ||
+        assigneeFilter !== 'all';
 
       if (!hasFilters) {
         setFilteredCustomers(customers);
@@ -228,6 +257,8 @@ export const useCustomerSearch = (customers: Customer[]) => {
             destination: destinationFilter !== 'all' ? destinationFilter : undefined,
             packageType: packageTypeFilter !== 'all' ? packageTypeFilter : undefined,
             leadType: leadTypeFilter !== 'all' ? leadTypeFilter : undefined,
+            service: serviceFilter !== 'all' ? serviceFilter : undefined,
+            assignee: assigneeFilter !== 'all' ? assigneeFilter : undefined,
           });
           
           const frontendResults = results.map(convertDbCustomerToFrontend);
@@ -268,15 +299,17 @@ export const useCustomerSearch = (customers: Customer[]) => {
           const matchesDestination = destinationFilter === 'all' || customer.destination === destinationFilter;
           const matchesPackageType = packageTypeFilter === 'all' || customer.packageType === packageTypeFilter;
           const matchesLeadType = leadTypeFilter === 'all' || customer.leadType === leadTypeFilter;
+          const matchesService = serviceFilter === 'all' || customer.service === serviceFilter;
+          const matchesAssignee = assigneeFilter === 'all' || customer.assignee === assigneeFilter;
 
-          return matchesSearch && matchesStatus && matchesDestination && matchesPackageType && matchesLeadType;
+          return matchesSearch && matchesStatus && matchesDestination && matchesPackageType && matchesLeadType && matchesService && matchesAssignee;
         });
         setFilteredCustomers(filtered);
       }
     };
 
     performSearch();
-  }, [customers, searchTerm, statusFilter, destinationFilter, packageTypeFilter, leadTypeFilter]);
+  }, [customers, searchTerm, statusFilter, destinationFilter, packageTypeFilter, leadTypeFilter, serviceFilter, assigneeFilter]);
 
   return {
     customers: filteredCustomers,
@@ -290,6 +323,12 @@ export const useCustomerSearch = (customers: Customer[]) => {
     setPackageTypeFilter,
     leadTypeFilter,
     setLeadTypeFilter,
+    serviceFilter,
+    setServiceFilter,
+    assigneeFilter,
+    setAssigneeFilter,
     isSearching,
+    destinationOptions,
+    assigneeOptions,
   };
 };

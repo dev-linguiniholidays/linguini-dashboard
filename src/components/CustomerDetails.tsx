@@ -9,8 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Edit, Save, X, MessageSquare, Send } from 'lucide-react';
+import { Edit, Save, X, MessageSquare, Send, Loader2 } from 'lucide-react';
 import { displayValue, formatDate, formatDateTime } from '@/lib/displayUtils';
+import { isAdmin } from '@/lib/roleUtils';
 import { toast } from 'sonner';
 
 interface CustomerDetailsProps {
@@ -20,31 +21,52 @@ interface CustomerDetailsProps {
   onUpdate: (id: string, updates: Partial<Customer>) => void;
   onAddComment: (customerId: string, text: string) => void;
   isLoading?: boolean;
+  assigneeOptions?: string[];
 }
 
 const statusColors = {
-  fresh: 'bg-blue-100 text-blue-800',
-  'no-response': 'bg-gray-100 text-gray-800',
-  ongoing: 'bg-yellow-100 text-yellow-800',
-  converted: 'bg-green-100 text-green-800',
-  dead: 'bg-red-100 text-red-800',
-  future: 'bg-purple-100 text-purple-800',
-  hot: 'bg-orange-100 text-orange-800',
+  fresh: 'bg-blue-100 text-blue-800 hover:opacity-70 transition-opacity',
+  'no-response': 'bg-gray-100 text-gray-800 hover:opacity-70 transition-opacity',
+  ongoing: 'bg-yellow-100 text-yellow-800 hover:opacity-70 transition-opacity',
+  converted: 'bg-green-100 text-green-800 hover:opacity-70 transition-opacity',
+  dead: 'bg-red-100 text-red-800 hover:opacity-70 transition-opacity',
+  future: 'bg-purple-100 text-purple-800 hover:opacity-70 transition-opacity',
+  hot: 'bg-orange-100 text-orange-800 hover:opacity-70 transition-opacity',
 };
 
 const packageTypeColors = {
-  private: 'bg-indigo-100 text-indigo-800',
-  group: 'bg-pink-100 text-pink-800',
+  private: 'bg-indigo-100 text-indigo-800 hover:opacity-70 transition-opacity',
+  group: 'bg-pink-100 text-pink-800 hover:opacity-70 transition-opacity',
 };
 
 const leadTypeColors = {
-  calling: 'bg-blue-100 text-blue-800',
-  instagram: 'bg-pink-100 text-pink-800',
-  referral: 'bg-green-100 text-green-800',
-  website: 'bg-purple-100 text-purple-800',
-  facebook: 'bg-blue-100 text-blue-800',
-  'walk-in': 'bg-orange-100 text-orange-800',
-  other: 'bg-gray-100 text-gray-800',
+  calling: 'bg-blue-100 text-blue-800 hover:opacity-70 transition-opacity',
+  instagram: 'bg-pink-100 text-pink-800 hover:opacity-70 transition-opacity',
+  referral: 'bg-green-100 text-green-800 hover:opacity-70 transition-opacity',
+  website: 'bg-purple-100 text-purple-800 hover:opacity-70 transition-opacity',
+  facebook: 'bg-blue-100 text-blue-800 hover:opacity-70 transition-opacity',
+  'walk-in': 'bg-orange-100 text-orange-800 hover:opacity-70 transition-opacity',
+  other: 'bg-gray-100 text-gray-800 hover:opacity-70 transition-opacity',
+};
+
+const serviceColors = {
+  'tour-package': 'bg-blue-100 text-blue-800 hover:opacity-70 transition-opacity',
+  'flight': 'bg-green-100 text-green-800 hover:opacity-70 transition-opacity',
+  'train': 'bg-yellow-100 text-yellow-800 hover:opacity-70 transition-opacity',
+  'visa': 'bg-purple-100 text-purple-800 hover:opacity-70 transition-opacity',
+  'group-departure': 'bg-pink-100 text-pink-800 hover:opacity-70 transition-opacity',
+  'bus': 'bg-orange-100 text-orange-800 hover:opacity-70 transition-opacity',
+  'cab': 'bg-red-100 text-red-800 hover:opacity-70 transition-opacity',
+  'hotel': 'bg-indigo-100 text-indigo-800 hover:opacity-70 transition-opacity',
+};
+
+const assigneeColors = {
+  'none': 'bg-gray-100 text-gray-800 hover:opacity-70 transition-opacity',
+  'admin': 'bg-red-100 text-red-800 hover:opacity-70 transition-opacity',
+  'user1': 'bg-blue-100 text-blue-800 hover:opacity-70 transition-opacity',
+  'user2': 'bg-green-100 text-green-800 hover:opacity-70 transition-opacity',
+  'user3': 'bg-yellow-100 text-yellow-800 hover:opacity-70 transition-opacity',
+  'user4': 'bg-purple-100 text-purple-800 hover:opacity-70 transition-opacity',
 };
 
 export const CustomerDetails = ({
@@ -54,6 +76,7 @@ export const CustomerDetails = ({
   onUpdate,
   onAddComment,
   isLoading = false,
+  assigneeOptions = [],
 }: CustomerDetailsProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -68,6 +91,8 @@ export const CustomerDetails = ({
     numberOfPax: 1,
     packageType: 'private' as Customer['packageType'],
     leadType: 'calling' as Customer['leadType'],
+    service: 'tour-package' as Customer['service'],
+    assignee: 'none' as Customer['assignee'],
   });
   const [newComment, setNewComment] = useState('');
 
@@ -113,6 +138,8 @@ export const CustomerDetails = ({
         numberOfPax: customer.numberOfPax,
         packageType: customer.packageType,
         leadType: customer.leadType,
+        service: customer.service,
+        assignee: customer.assignee,
       });
     }
   }, [customer]);
@@ -131,7 +158,8 @@ export const CustomerDetails = ({
           border: 'none',
         },
       });
-    } catch (_error) {
+    } catch (error) {
+      console.error('Error updating customer:', error);
       toast.error('Failed to update customer');
     }
   };
@@ -189,13 +217,32 @@ export const CustomerDetails = ({
     return labels[type] || type;
   };
 
+  const getServiceLabel = (service: string) => {
+    const labels: Record<string, string> = {
+      'tour-package': 'Tour Package',
+      'flight': 'Flight',
+      'train': 'Train',
+      'visa': 'Visa',
+      'group-departure': 'Group Departure',
+      'bus': 'Bus',
+      'cab': 'Cab',
+      'hotel': 'Hotel',
+    };
+    return labels[service] || service;
+  };
+
+  const getAssigneeLabel = (assignee: string) => {
+    if (assignee === 'none') return 'None';
+    return assignee; // Use the actual name from the database
+  };
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-full h-full max-w-none max-h-none md:max-w-4xl md:max-h-[90vh] md:w-auto md:h-auto overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-semibold">
+            <DialogTitle className="text-lg md:text-xl font-semibold">
               Customer Details
             </DialogTitle>
             <div className="flex gap-3 mr-8">
@@ -363,6 +410,60 @@ export const CustomerDetails = ({
               ) : (
                 <Badge className={leadTypeColors[customer.leadType]}>
                   {getLeadTypeLabel(customer.leadType)}
+                </Badge>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Service</Label>
+              {isEditing ? (
+                <Select value={formData.service} onValueChange={(value) => setFormData(prev => ({ ...prev, service: value as Customer['service'] }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="tour-package">Tour Package</SelectItem>
+                    <SelectItem value="flight">Flight</SelectItem>
+                    <SelectItem value="train">Train</SelectItem>
+                    <SelectItem value="visa">Visa</SelectItem>
+                    <SelectItem value="group-departure">Group Departure</SelectItem>
+                    <SelectItem value="bus">Bus</SelectItem>
+                    <SelectItem value="cab">Cab</SelectItem>
+                    <SelectItem value="hotel">Hotel</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Badge className={serviceColors[customer.service]}>
+                  {getServiceLabel(customer.service)}
+                </Badge>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Assignee</Label>
+              {isEditing && isAdmin() ? (
+                assigneeOptions.length === 0 ? (
+                  <div className="flex items-center space-x-2 text-sm text-gray-500">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Loading assignee options...</span>
+                  </div>
+                ) : (
+                  <Select value={formData.assignee} onValueChange={(value) => setFormData(prev => ({ ...prev, assignee: value as Customer['assignee'] }))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {assigneeOptions.map((assignee) => (
+                        <SelectItem key={assignee} value={assignee}>
+                          {assignee === 'none' ? 'None' : assignee}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )
+              ) : (
+                <Badge className={assigneeColors[customer.assignee]}>
+                  {getAssigneeLabel(customer.assignee)}
                 </Badge>
               )}
             </div>

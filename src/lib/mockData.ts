@@ -19,6 +19,8 @@ export interface Customer {
   numberOfPax: number;
   packageType: 'private' | 'group';
   leadType: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other';
+  service: 'tour-package' | 'flight' | 'train' | 'visa' | 'group-departure' | 'bus' | 'cab' | 'hotel';
+  assignee: 'none' | 'admin' | 'user1' | 'user2' | 'user3' | 'user4';
   comments: Comment[];
   updatedAt: string;
 }
@@ -37,6 +39,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 2,
     packageType: 'private',
     leadType: 'instagram',
+    service: 'tour-package',
+    assignee: 'admin',
     comments: [
       {
         id: 'c1',
@@ -68,6 +72,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 4,
     packageType: 'group',
     leadType: 'calling',
+    service: 'flight',
+    assignee: 'user1',
     comments: [
       {
         id: 'c3',
@@ -92,6 +98,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 2,
     packageType: 'private',
     leadType: 'referral',
+    service: 'hotel',
+    assignee: 'user2',
     comments: [
       {
         id: 'c4',
@@ -123,6 +131,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 1,
     packageType: 'group',
     leadType: 'website',
+    service: 'tour-package',
+    assignee: 'user4',
     comments: [],
     updatedAt: '2024-01-12T14:15:00Z'
   },
@@ -139,6 +149,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 3,
     packageType: 'private',
     leadType: 'facebook',
+    service: 'train',
+    assignee: 'user3',
     comments: [
       {
         id: 'c6',
@@ -163,6 +175,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 2,
     packageType: 'private',
     leadType: 'walk-in',
+    service: 'bus',
+    assignee: 'admin',
     comments: [
       {
         id: 'c7',
@@ -187,6 +201,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 1,
     packageType: 'group',
     leadType: 'calling',
+    service: 'visa',
+    assignee: 'user2',
     comments: [
       {
         id: 'c8',
@@ -211,6 +227,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 2,
     packageType: 'private',
     leadType: 'instagram',
+    service: 'tour-package',
+    assignee: 'admin',
     comments: [
       {
         id: 'c9',
@@ -235,6 +253,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 3,
     packageType: 'group',
     leadType: 'website',
+    service: 'tour-package',
+    assignee: 'user2',
     comments: [
       {
         id: 'c10',
@@ -259,6 +279,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 2,
     packageType: 'private',
     leadType: 'referral',
+    service: 'group-departure',
+    assignee: 'user2',
     comments: [
       {
         id: 'c11',
@@ -283,6 +305,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 4,
     packageType: 'group',
     leadType: 'facebook',
+    service: 'cab',
+    assignee: 'user1',
     comments: [],
     updatedAt: '2024-01-16T14:20:00Z'
   },
@@ -299,6 +323,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 2,
     packageType: 'private',
     leadType: 'instagram',
+    service: 'flight',
+    assignee: 'user2',
     comments: [
       {
         id: 'c12',
@@ -323,6 +349,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 3,
     packageType: 'private',
     leadType: 'calling',
+    service: 'visa',
+    assignee: 'none',
     comments: [
       {
         id: 'c13',
@@ -347,6 +375,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 2,
     packageType: 'group',
     leadType: 'website',
+    service: 'hotel',
+    assignee: 'user1',
     comments: [
       {
         id: 'c14',
@@ -371,6 +401,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 2,
     packageType: 'private',
     leadType: 'walk-in',
+    service: 'train',
+    assignee: 'user3',
     comments: [],
     updatedAt: '2024-01-17T13:30:00Z'
   },
@@ -387,6 +419,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 2,
     packageType: 'private',
     leadType: 'referral',
+    service: 'flight',
+    assignee: 'none',
     comments: [
       {
         id: 'c15',
@@ -411,6 +445,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 2,
     packageType: 'group',
     leadType: 'calling',
+    service: 'group-departure',
+    assignee: 'user3',
     comments: [
       {
         id: 'c16',
@@ -435,6 +471,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 1,
     packageType: 'group',
     leadType: 'instagram',
+    service: 'tour-package',
+    assignee: 'user4',
     comments: [
       {
         id: 'c17',
@@ -459,6 +497,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 2,
     packageType: 'private',
     leadType: 'website',
+    service: 'train',
+    assignee: 'user2',
     comments: [
       {
         id: 'c18',
@@ -483,6 +523,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 2,
     packageType: 'private',
     leadType: 'facebook',
+    service: 'visa',
+    assignee: 'user4',
     comments: [
       {
         id: 'c19',
@@ -507,6 +549,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 3,
     packageType: 'group',
     leadType: 'walk-in',
+    service: 'bus',
+    assignee: 'admin',
     comments: [],
     updatedAt: '2024-01-18T10:15:00Z'
   },
@@ -523,6 +567,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 2,
     packageType: 'private',
     leadType: 'referral',
+    service: 'bus',
+    assignee: 'user2',
     comments: [
       {
         id: 'c20',
@@ -547,6 +593,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 2,
     packageType: 'private',
     leadType: 'instagram',
+    service: 'group-departure',
+    assignee: 'user3',
     comments: [
       {
         id: 'c21',
@@ -571,6 +619,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 2,
     packageType: 'group',
     leadType: 'website',
+    service: 'hotel',
+    assignee: 'user3',
     comments: [
       {
         id: 'c22',
@@ -595,6 +645,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 2,
     packageType: 'private',
     leadType: 'calling',
+    service: 'train',
+    assignee: 'admin',
     comments: [],
     updatedAt: '2024-01-19T13:20:00Z'
   },
@@ -611,6 +663,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 4,
     packageType: 'group',
     leadType: 'facebook',
+    service: 'flight',
+    assignee: 'user4',
     comments: [
       {
         id: 'c23',
@@ -635,6 +689,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 1,
     packageType: 'private',
     leadType: 'instagram',
+    service: 'hotel',
+    assignee: 'user3',
     comments: [
       {
         id: 'c24',
@@ -659,6 +715,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 2,
     packageType: 'private',
     leadType: 'referral',
+    service: 'visa',
+    assignee: 'user2',
     comments: [
       {
         id: 'c25',
@@ -683,6 +741,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 2,
     packageType: 'group',
     leadType: 'website',
+    service: 'flight',
+    assignee: 'user2',
     comments: [
       {
         id: 'c26',
@@ -707,6 +767,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 2,
     packageType: 'private',
     leadType: 'walk-in',
+    service: 'group-departure',
+    assignee: 'user3',
     comments: [],
     updatedAt: '2024-01-19T16:00:00Z'
   },
@@ -723,6 +785,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 3,
     packageType: 'group',
     leadType: 'calling',
+    service: 'tour-package',
+    assignee: 'user2',
     comments: [
       {
         id: 'c27',
@@ -747,6 +811,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 4,
     packageType: 'group',
     leadType: 'facebook',
+    service: 'cab',
+    assignee: 'user2',
     comments: [
       {
         id: 'c28',
@@ -771,6 +837,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 2,
     packageType: 'private',
     leadType: 'instagram',
+    service: 'hotel',
+    assignee: 'user4',
     comments: [
       {
         id: 'c29',
@@ -795,6 +863,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 1,
     packageType: 'group',
     leadType: 'website',
+    service: 'hotel',
+    assignee: 'user4',
     comments: [
       {
         id: 'c30',
@@ -819,6 +889,8 @@ export const mockCustomers: Customer[] = [
     numberOfPax: 2,
     packageType: 'private',
     leadType: 'referral',
+    service: 'flight',
+    assignee: 'user4',
     comments: [
       {
         id: 'c31',
@@ -855,6 +927,26 @@ export const leadTypeOptions = [
   { value: 'facebook', label: 'Facebook' },
   { value: 'walk-in', label: 'Walk-in' },
   { value: 'other', label: 'Other' }
+];
+
+export const serviceOptions = [
+  { value: 'tour-package', label: 'Tour Package' },
+  { value: 'flight', label: 'Flight' },
+  { value: 'train', label: 'Train' },
+  { value: 'visa', label: 'Visa' },
+  { value: 'group-departure', label: 'Group Departure' },
+  { value: 'bus', label: 'Bus' },
+  { value: 'cab', label: 'Cab' },
+  { value: 'hotel', label: 'Hotel' }
+];
+
+export const assigneeOptions = [
+  { value: 'none', label: 'None' },
+  { value: 'admin', label: 'Admin User' },
+  { value: 'user1', label: 'John Doe' },
+  { value: 'user2', label: 'Jane Smith' },
+  { value: 'user3', label: 'Mike Johnson' },
+  { value: 'user4', label: 'Sarah Wilson' }
 ];
 
 export const destinationOptions = [

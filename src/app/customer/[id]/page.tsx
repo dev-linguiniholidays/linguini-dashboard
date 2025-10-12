@@ -16,28 +16,28 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const statusColors = {
-  fresh: 'bg-blue-100 text-blue-800',
-  'no-response': 'bg-gray-100 text-gray-800',
-  ongoing: 'bg-yellow-100 text-yellow-800',
-  converted: 'bg-green-100 text-green-800',
-  dead: 'bg-red-100 text-red-800',
-  future: 'bg-purple-100 text-purple-800',
-  hot: 'bg-orange-100 text-orange-800',
+  fresh: 'bg-blue-100 text-blue-800 hover:opacity-70 transition-opacity',
+  'no-response': 'bg-gray-100 text-gray-800 hover:opacity-70 transition-opacity',
+  ongoing: 'bg-yellow-100 text-yellow-800 hover:opacity-70 transition-opacity',
+  converted: 'bg-green-100 text-green-800 hover:opacity-70 transition-opacity',
+  dead: 'bg-red-100 text-red-800 hover:opacity-70 transition-opacity',
+  future: 'bg-purple-100 text-purple-800 hover:opacity-70 transition-opacity',
+  hot: 'bg-orange-100 text-orange-800 hover:opacity-70 transition-opacity',
 };
 
 const packageTypeColors = {
-  private: 'bg-indigo-100 text-indigo-800',
-  group: 'bg-pink-100 text-pink-800',
+  private: 'bg-indigo-100 text-indigo-800 hover:opacity-70 transition-opacity',
+  group: 'bg-pink-100 text-pink-800 hover:opacity-70 transition-opacity',
 };
 
 const leadTypeColors = {
-  calling: 'bg-blue-100 text-blue-800',
-  instagram: 'bg-pink-100 text-pink-800',
-  referral: 'bg-green-100 text-green-800',
-  website: 'bg-purple-100 text-purple-800',
-  facebook: 'bg-blue-100 text-blue-800',
-  'walk-in': 'bg-orange-100 text-orange-800',
-  other: 'bg-gray-100 text-gray-800',
+  calling: 'bg-blue-100 text-blue-800 hover:opacity-70 transition-opacity',
+  instagram: 'bg-pink-100 text-pink-800 hover:opacity-70 transition-opacity',
+  referral: 'bg-green-100 text-green-800 hover:opacity-70 transition-opacity',
+  website: 'bg-purple-100 text-purple-800 hover:opacity-70 transition-opacity',
+  facebook: 'bg-blue-100 text-blue-800 hover:opacity-70 transition-opacity',
+  'walk-in': 'bg-orange-100 text-orange-800 hover:opacity-70 transition-opacity',
+  other: 'bg-gray-100 text-gray-800 hover:opacity-70 transition-opacity',
 };
 
 export default function CustomerDetailPage() {
@@ -144,7 +144,7 @@ export default function CustomerDetailPage() {
         customerId, 
         text, 
         userId: user.id, 
-        userName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User' 
+        userName: typeof window !== 'undefined' ? localStorage.getItem('user-name') || 'User' : 'User'
       });
     } catch (_error) {
       toast.error('Failed to add comment', {

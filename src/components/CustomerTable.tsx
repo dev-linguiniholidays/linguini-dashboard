@@ -28,32 +28,58 @@ interface CustomerTableProps {
   onPackageTypeFilterChange: (type: string) => void;
   leadTypeFilter: string;
   onLeadTypeFilterChange: (type: string) => void;
+  serviceFilter: string;
+  onServiceFilterChange: (service: string) => void;
+  assigneeFilter: string;
+  onAssigneeFilterChange: (assignee: string) => void;
   onViewComments: (customer: Customer) => void;
+  destinationOptions?: string[];
+  assigneeOptions?: string[];
 }
 
 const statusColors = {
-  fresh: 'bg-blue-100 text-blue-800',
-  'no-response': 'bg-gray-100 text-gray-800',
-  ongoing: 'bg-yellow-100 text-yellow-800',
-  converted: 'bg-green-100 text-green-800',
-  dead: 'bg-red-100 text-red-800',
-  future: 'bg-purple-100 text-purple-800',
-  hot: 'bg-orange-100 text-orange-800',
+  fresh: 'bg-blue-100 text-blue-800 hover:opacity-70 transition-opacity',
+  'no-response': 'bg-gray-100 text-gray-800 hover:opacity-70 transition-opacity',
+  ongoing: 'bg-yellow-100 text-yellow-800 hover:opacity-70 transition-opacity',
+  converted: 'bg-green-100 text-green-800 hover:opacity-70 transition-opacity',
+  dead: 'bg-red-100 text-red-800 hover:opacity-70 transition-opacity',
+  future: 'bg-purple-100 text-purple-800 hover:opacity-70 transition-opacity',
+  hot: 'bg-orange-100 text-orange-800 hover:opacity-70 transition-opacity',
 };
 
 const packageTypeColors = {
-  private: 'bg-indigo-100 text-indigo-800',
-  group: 'bg-pink-100 text-pink-800',
+  private: 'bg-indigo-100 text-indigo-800 hover:opacity-70 transition-opacity',
+  group: 'bg-pink-100 text-pink-800 hover:opacity-70 transition-opacity',
 };
 
 const leadTypeColors = {
-  calling: 'bg-blue-100 text-blue-800',
-  instagram: 'bg-pink-100 text-pink-800',
-  referral: 'bg-green-100 text-green-800',
-  website: 'bg-purple-100 text-purple-800',
-  facebook: 'bg-blue-100 text-blue-800',
-  'walk-in': 'bg-orange-100 text-orange-800',
-  other: 'bg-gray-100 text-gray-800',
+  calling: 'bg-blue-100 text-blue-800 hover:opacity-70 transition-opacity',
+  instagram: 'bg-pink-100 text-pink-800 hover:opacity-70 transition-opacity',
+  referral: 'bg-green-100 text-green-800 hover:opacity-70 transition-opacity',
+  website: 'bg-purple-100 text-purple-800 hover:opacity-70 transition-opacity',
+  facebook: 'bg-blue-100 text-blue-800 hover:opacity-70 transition-opacity',
+  'walk-in': 'bg-orange-100 text-orange-800 hover:opacity-70 transition-opacity',
+  other: 'bg-gray-100 text-gray-800 hover:opacity-70 transition-opacity',
+};
+
+const serviceColors = {
+  'tour-package': 'bg-blue-100 text-blue-800 hover:opacity-70 transition-opacity',
+  'flight': 'bg-green-100 text-green-800 hover:opacity-70 transition-opacity',
+  'train': 'bg-yellow-100 text-yellow-800 hover:opacity-70 transition-opacity',
+  'visa': 'bg-purple-100 text-purple-800 hover:opacity-70 transition-opacity',
+  'group-departure': 'bg-pink-100 text-pink-800 hover:opacity-70 transition-opacity',
+  'bus': 'bg-orange-100 text-orange-800 hover:opacity-70 transition-opacity',
+  'cab': 'bg-red-100 text-red-800 hover:opacity-70 transition-opacity',
+  'hotel': 'bg-indigo-100 text-indigo-800 hover:opacity-70 transition-opacity',
+};
+
+const assigneeColors = {
+  'none': 'bg-gray-100 text-gray-800 hover:opacity-70 transition-opacity',
+  'admin': 'bg-red-100 text-red-800 hover:opacity-70 transition-opacity',
+  'user1': 'bg-blue-100 text-blue-800 hover:opacity-70 transition-opacity',
+  'user2': 'bg-green-100 text-green-800 hover:opacity-70 transition-opacity',
+  'user3': 'bg-yellow-100 text-yellow-800 hover:opacity-70 transition-opacity',
+  'user4': 'bg-purple-100 text-purple-800 hover:opacity-70 transition-opacity',
 };
 
 export const CustomerTable = ({
@@ -72,7 +98,13 @@ export const CustomerTable = ({
   onPackageTypeFilterChange,
   leadTypeFilter,
   onLeadTypeFilterChange,
+  serviceFilter,
+  onServiceFilterChange,
+  assigneeFilter,
+  onAssigneeFilterChange,
   onViewComments,
+  destinationOptions = [],
+  assigneeOptions = [],
 }: CustomerTableProps) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -131,9 +163,28 @@ export const CustomerTable = ({
     return labels[type] || type;
   };
 
+  const getServiceLabel = (service: string) => {
+    const labels: Record<string, string> = {
+      'tour-package': 'Tour Package',
+      'flight': 'Flight',
+      'train': 'Train',
+      'visa': 'Visa',
+      'group-departure': 'Group Departure',
+      'bus': 'Bus',
+      'cab': 'Cab',
+      'hotel': 'Hotel',
+    };
+    return labels[service] || service;
+  };
+
+  const getAssigneeLabel = (assignee: string) => {
+    if (assignee === 'none') return 'None';
+    return assignee; // Use the actual name from the database
+  };
+
   return (
     <div className="space-y-4">
-      {/* Search and Filters */}
+      {/* Search and Add Customer */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -144,6 +195,14 @@ export const CustomerTable = ({
             className="pl-10"
           />
         </div>
+        <Button onClick={onAdd} className="w-full sm:w-auto">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Customer
+        </Button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-4">
         
         <Select value={statusFilter} onValueChange={onStatusFilterChange}>
           <SelectTrigger className="w-full sm:w-40">
@@ -167,14 +226,11 @@ export const CustomerTable = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Destinations</SelectItem>
-            <SelectItem value="Paris, France">Paris, France</SelectItem>
-            <SelectItem value="Tokyo, Japan">Tokyo, Japan</SelectItem>
-            <SelectItem value="Bali, Indonesia">Bali, Indonesia</SelectItem>
-            <SelectItem value="Rome, Italy">Rome, Italy</SelectItem>
-            <SelectItem value="New York, USA">New York, USA</SelectItem>
-            <SelectItem value="Dubai, UAE">Dubai, UAE</SelectItem>
-            <SelectItem value="London, UK">London, UK</SelectItem>
-            <SelectItem value="Barcelona, Spain">Barcelona, Spain</SelectItem>
+            {destinationOptions.map((destination) => (
+              <SelectItem key={destination} value={destination}>
+                {destination}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
@@ -205,10 +261,36 @@ export const CustomerTable = ({
           </SelectContent>
         </Select>
 
-        <Button onClick={onAdd} className="w-full sm:w-auto">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Customer
-        </Button>
+        <Select value={serviceFilter} onValueChange={onServiceFilterChange}>
+          <SelectTrigger className="w-full sm:w-40">
+            <SelectValue placeholder="Service" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Services</SelectItem>
+            <SelectItem value="tour-package">Tour Package</SelectItem>
+            <SelectItem value="flight">Flight</SelectItem>
+            <SelectItem value="train">Train</SelectItem>
+            <SelectItem value="visa">Visa</SelectItem>
+            <SelectItem value="group-departure">Group Departure</SelectItem>
+            <SelectItem value="bus">Bus</SelectItem>
+            <SelectItem value="cab">Cab</SelectItem>
+            <SelectItem value="hotel">Hotel</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={assigneeFilter} onValueChange={onAssigneeFilterChange}>
+          <SelectTrigger className="w-full sm:w-40">
+            <SelectValue placeholder="Assignee" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Assignees</SelectItem>
+            {assigneeOptions.map((assignee) => (
+              <SelectItem key={assignee} value={assignee}>
+                {assignee === 'none' ? 'None' : assignee}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Table */}
@@ -225,6 +307,8 @@ export const CustomerTable = ({
               <TableHead>Pax</TableHead>
               <TableHead>Package</TableHead>
               <TableHead>Lead Type</TableHead>
+              <TableHead>Service</TableHead>
+              <TableHead>Assignee</TableHead>
               <TableHead>Lead Created</TableHead>
               <TableHead>Comments</TableHead>
               <TableHead>Actions</TableHead>
@@ -252,6 +336,16 @@ export const CustomerTable = ({
                 <TableCell>
                   <Badge className={leadTypeColors[customer.leadType]}>
                     {getLeadTypeLabel(customer.leadType)}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge className={serviceColors[customer.service]}>
+                    {getServiceLabel(customer.service)}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge className={assigneeColors[customer.assignee]}>
+                    {getAssigneeLabel(customer.assignee)}
                   </Badge>
                 </TableCell>
                 <TableCell>{formatDate(customer.leadCreationDate)}</TableCell>

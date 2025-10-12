@@ -11,7 +11,7 @@ import { Users, TrendingUp, Clock, CheckCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Dashboard() {
-  const { customers: allCustomers, addCustomer, updateCustomer, deleteCustomer, addComment, isLoading } = useCustomers();
+  const { customers: allCustomers, addCustomer, updateCustomer, deleteCustomer, addComment, isLoading, destinationOptions, assigneeOptions } = useCustomers();
   const { user } = useAuth();
   const {
     customers,
@@ -25,7 +25,13 @@ export default function Dashboard() {
     setPackageTypeFilter,
     leadTypeFilter,
     setLeadTypeFilter,
-  } = useCustomerSearch(allCustomers);
+    serviceFilter,
+    setServiceFilter,
+    assigneeFilter,
+    setAssigneeFilter,
+    destinationOptions: searchDestinationOptions,
+    assigneeOptions: searchAssigneeOptions,
+  } = useCustomerSearch(allCustomers, destinationOptions, assigneeOptions);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -109,7 +115,7 @@ export default function Dashboard() {
         customerId, 
         text, 
         userId: user.id, 
-        userName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User' 
+        userName: typeof window !== 'undefined' ? localStorage.getItem('user-name') || 'User' : 'User'
       });
     } catch (_error) {
       toast.error('Failed to add comment', {
@@ -238,7 +244,13 @@ export default function Dashboard() {
             onPackageTypeFilterChange={setPackageTypeFilter}
             leadTypeFilter={leadTypeFilter}
             onLeadTypeFilterChange={setLeadTypeFilter}
+            serviceFilter={serviceFilter}
+            onServiceFilterChange={setServiceFilter}
+            assigneeFilter={assigneeFilter}
+            onAssigneeFilterChange={setAssigneeFilter}
             onViewComments={handleViewComments}
+            destinationOptions={searchDestinationOptions}
+            assigneeOptions={searchAssigneeOptions}
           />
         )}
       </div>
@@ -248,6 +260,7 @@ export default function Dashboard() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSave={handleSave}
+        assigneeOptions={searchAssigneeOptions}
       />
 
       {/* Edit Customer Modal */}
@@ -257,6 +270,7 @@ export default function Dashboard() {
         onClose={() => setIsEditModalOpen(false)}
         onSave={handleSave}
         onUpdate={handleUpdate}
+        assigneeOptions={searchAssigneeOptions}
       />
 
       {/* Customer Details Modal */}
@@ -267,6 +281,7 @@ export default function Dashboard() {
           onClose={() => setIsDetailsModalOpen(false)}
           onUpdate={handleUpdate}
           onAddComment={handleAddComment}
+          assigneeOptions={searchAssigneeOptions}
         />
       )}
     </div>

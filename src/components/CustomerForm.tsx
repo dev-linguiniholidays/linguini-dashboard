@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Loader2 } from 'lucide-react';
+import { isAdmin } from '@/lib/roleUtils';
 import { toast } from 'sonner';
 
 interface CustomerFormProps {
@@ -17,6 +19,7 @@ interface CustomerFormProps {
   onSave: (customer: Omit<Customer, 'id' | 'updatedAt' | 'comments'>) => void;
   onUpdate?: (id: string, updates: Partial<Customer>) => void;
   isLoading?: boolean;
+  assigneeOptions?: string[];
 }
 
 export const CustomerForm = ({
@@ -26,6 +29,7 @@ export const CustomerForm = ({
   onSave,
   onUpdate,
   isLoading = false,
+  assigneeOptions = [],
 }: CustomerFormProps) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -39,6 +43,8 @@ export const CustomerForm = ({
     numberOfPax: 1,
     packageType: 'private' as Customer['packageType'],
     leadType: 'calling' as Customer['leadType'],
+    service: 'tour-package' as Customer['service'],
+    assignee: 'none' as Customer['assignee'],
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -57,6 +63,8 @@ export const CustomerForm = ({
         numberOfPax: customer.numberOfPax,
         packageType: customer.packageType,
         leadType: customer.leadType,
+        service: customer.service,
+        assignee: customer.assignee,
       });
     } else {
       setFormData({
@@ -71,6 +79,8 @@ export const CustomerForm = ({
         numberOfPax: 1,
         packageType: 'private',
         leadType: 'calling',
+        service: 'tour-package',
+        assignee: 'none',
       });
     }
     setErrors({});
@@ -318,6 +328,50 @@ export const CustomerForm = ({
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="service">Service</Label>
+              <Select value={formData.service} onValueChange={(value) => handleInputChange('service', value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="tour-package">Tour Package</SelectItem>
+                  <SelectItem value="flight">Flight</SelectItem>
+                  <SelectItem value="train">Train</SelectItem>
+                  <SelectItem value="visa">Visa</SelectItem>
+                  <SelectItem value="group-departure">Group Departure</SelectItem>
+                  <SelectItem value="bus">Bus</SelectItem>
+                  <SelectItem value="cab">Cab</SelectItem>
+                  <SelectItem value="hotel">Hotel</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {isAdmin() && (
+              <div className="space-y-2">
+                <Label htmlFor="assignee">Assignee</Label>
+                {assigneeOptions.length === 0 ? (
+                  <div className="flex items-center space-x-2 text-sm text-gray-500">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Loading assignee options...</span>
+                  </div>
+                ) : (
+                  <Select value={formData.assignee} onValueChange={(value) => handleInputChange('assignee', value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {assigneeOptions.map((assignee) => (
+                        <SelectItem key={assignee} value={assignee}>
+                          {assignee === 'none' ? 'None' : assignee}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="leadCreationDate">Lead Creation Date</Label>

@@ -3,6 +3,8 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase, signIn as supabaseSignIn, signUp as supabaseSignUp, signOut as supabaseSignOut } from '@/lib/supabase';
+import { customerService } from '@/lib/database';
+import { setStoredRole } from '@/lib/roleUtils';
 
 interface AuthContextType {
   user: User | null;
@@ -32,11 +34,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (supabase) {
         const { data: { session } } = await supabase.auth.getSession();
         setUser(session?.user ?? null);
+        
+        // If user is logged in, fetch their role from database
+        if (session?.user?.email) {
+          try {
+            const userInfo = await customerService.getUserByEmail(session.user.email);
+            if (userInfo) {
+              setStoredRole(userInfo.role as 'admin' | 'user');
+              localStorage.setItem('user-name', userInfo.name);
+            } else {
+              setStoredRole('user');
+              localStorage.setItem('user-name', 'Regular User');
+            }
+          } catch (dbError) {
+            console.error('Error fetching user info:', dbError);
+            setStoredRole('user');
+            localStorage.setItem('user-name', 'Regular User');
+          }
+        }
       } else {
         // Mock authentication - check localStorage or set default user
         const storedUser = localStorage.getItem('mock-user');
         if (storedUser) {
-          setUser(JSON.parse(storedUser));
+          const user = JSON.parse(storedUser);
+          setUser(user);
+          // Set role based on stored user email
+          if (user.email === 'admin@linguiniholidays.com') {
+            setStoredRole('admin');
+            localStorage.setItem('user-name', 'Admin User');
+          } else {
+            setStoredRole('user');
+            localStorage.setItem('user-name', 'Regular User');
+          }
         } else {
           // Set default mock user for development
           const defaultUser = {
@@ -70,6 +99,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           };
           localStorage.setItem('mock-user', JSON.stringify(defaultUser));
           setUser(defaultUser);
+          // Set admin role for default user
+          setStoredRole('admin');
+          localStorage.setItem('user-name', 'Admin User');
         }
       }
       setLoading(false);
@@ -82,6 +114,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (event, session) => {
           setUser(session?.user ?? null);
+          
+          // If user is logged in, fetch their role from database
+          if (session?.user?.email) {
+            try {
+              const userInfo = await customerService.getUserByEmail(session.user.email);
+              if (userInfo) {
+                setStoredRole(userInfo.role as 'admin' | 'user');
+                localStorage.setItem('user-name', userInfo.name);
+              } else {
+                setStoredRole('user');
+                localStorage.setItem('user-name', 'Regular User');
+              }
+            } catch (dbError) {
+              console.error('Error fetching user info:', dbError);
+              setStoredRole('user');
+              localStorage.setItem('user-name', 'Regular User');
+            }
+          } else {
+            // Clear role and user name if logged out
+            localStorage.removeItem('linguini-crm-user-role');
+            localStorage.removeItem('user-name');
+          }
+          
           setLoading(false);
         }
       );
@@ -94,6 +149,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { data, error } = await supabaseSignIn(email, password);
     if (data?.user) {
       setUser(data.user);
+      
+      // Fetch user information from database and set role
+      try {
+        const userInfo = await customerService.getUserByEmail(email);
+        if (userInfo) {
+          // Set role from database
+          setStoredRole(userInfo.role as 'admin' | 'user');
+          // Store user name in localStorage for use in comments
+          localStorage.setItem('user-name', userInfo.name);
+        } else {
+          // Default to 'user' role if user not found in database
+          setStoredRole('user');
+          localStorage.setItem('user-name', 'Regular User');
+        }
+      } catch (dbError) {
+        console.error('Error fetching user info:', dbError);
+        // Default to 'user' role if database error
+        setStoredRole('user');
+        localStorage.setItem('user-name', 'Regular User');
+      }
     }
     return { error };
   };
@@ -102,6 +177,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { data, error } = await supabaseSignUp(email, password);
     if (data?.user) {
       setUser(data.user);
+      
+      // Fetch user information from database and set role
+      try {
+        const userInfo = await customerService.getUserByEmail(email);
+        if (userInfo) {
+          // Set role from database
+          setStoredRole(userInfo.role as 'admin' | 'user');
+          // Store user name in localStorage for use in comments
+          localStorage.setItem('user-name', userInfo.name);
+        } else {
+          // Default to 'user' role if user not found in database
+          setStoredRole('user');
+          localStorage.setItem('user-name', 'Regular User');
+        }
+      } catch (dbError) {
+        console.error('Error fetching user info:', dbError);
+        // Default to 'user' role if database error
+        setStoredRole('user');
+        localStorage.setItem('user-name', 'Regular User');
+      }
     }
     return { error };
   };
@@ -109,6 +204,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     await supabaseSignOut();
     setUser(null);
+    // Clear stored role and user name
+    localStorage.removeItem('linguini-crm-user-role');
+    localStorage.removeItem('user-name');
   };
 
   const value = {

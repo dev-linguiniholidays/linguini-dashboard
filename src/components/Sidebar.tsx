@@ -3,22 +3,27 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, Users, User } from 'lucide-react';
+import { Home, Users, User, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: Home },
   { name: 'Customers', href: '/customers', icon: Users },
 ];
 
-export const Sidebar = () => {
+interface SidebarProps {
+  onClose?: () => void;
+}
+
+export const Sidebar = ({ onClose }: SidebarProps) => {
   const pathname = usePathname();
   const { user } = useAuth();
 
   return (
     <div className="flex flex-col w-64 bg-white border-r border-gray-200 h-full">
       {/* Logo */}
-      <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200">
+      <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
         <div className="flex items-center space-x-3">
           {/* Airplane with flight path */}
           <div className="relative">
@@ -42,6 +47,18 @@ export const Sidebar = () => {
           {/* Original title */}
           <h1 className="text-xl font-bold text-gray-900">LinguiniHolidays</h1>
         </div>
+        
+        {/* Mobile close button */}
+        {onClose && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="md:hidden"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        )}
       </div>
 
       {/* Navigation */}
@@ -76,7 +93,7 @@ export const Sidebar = () => {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">
-              {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'}
+              {typeof window !== 'undefined' ? localStorage.getItem('user-name') || 'User' : 'User'}
             </p>
             <p className="text-xs text-gray-500">
               {user?.email || 'No email'}

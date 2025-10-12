@@ -33,9 +33,10 @@ export const canAddCustomer = (): boolean => {
 
 export const getCurrentUser = () => {
   const role = getStoredRole();
+  const storedName = typeof window !== 'undefined' ? localStorage.getItem('user-name') : null;
   return {
     id: role === 'admin' ? 'admin' : 'user1',
-    name: role === 'admin' ? 'Admin User' : 'Regular User',
+    name: storedName || (role === 'admin' ? 'Admin User' : 'Regular User'),
     role
   };
 };

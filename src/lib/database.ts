@@ -88,6 +88,8 @@ export const customerService = {
     destination?: string;
     packageType?: string;
     leadType?: string;
+    service?: string;
+    assignee?: string;
   }): Promise<Customer[]> {
     if (!supabase) throw new Error('Supabase not configured');
     
@@ -113,10 +115,86 @@ export const customerService = {
       query = query.eq('lead_type', filters.leadType);
     }
     
+    if (filters.service && filters.service !== 'all') {
+      query = query.eq('service', filters.service);
+    }
+    
+    if (filters.assignee && filters.assignee !== 'all') {
+      query = query.eq('assignee', filters.assignee);
+    }
+    
     const { data, error } = await query.order('created_at', { ascending: false });
     
     if (error) throw error;
     return data || [];
+  },
+
+  // Get user information by email
+  async getUserByEmail(email: string): Promise<{ name: string; role: string } | null> {
+    if (!supabase) {
+      return null;
+    }
+
+    const { data, error } = await supabase
+      .from('users')
+      .select('name, role')
+      .eq('email', email)
+      .single();
+
+    if (error || !data) {
+      return null;
+    }
+
+    return {
+      name: data.name,
+      role: data.role
+    };
+  },
+
+  // Get unique destinations from customers table
+  async getUniqueDestinations(): Promise<string[]> {
+    if (!supabase) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from('customers')
+      .select('destination')
+      .not('destination', 'is', null);
+
+    if (error || !data) {
+      return [];
+    }
+
+    // Extract unique destinations and filter out null values
+    const uniqueDestinations = [...new Set(data.map(item => item.destination).filter(Boolean))];
+    return uniqueDestinations.sort();
+  },
+
+  // Get unique assignee names from users table
+  async getUniqueAssignees(): Promise<string[]> {
+    if (!supabase) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from('users')
+      .select('name')
+      .not('name', 'is', null);
+
+    if (error) {
+      console.error('Error fetching assignees:', error);
+      return [];
+    }
+
+    if (!data) {
+      return [];
+    }
+
+    // Extract unique names and add 'none' option
+    const uniqueNames = [...new Set(data.map(item => item.name).filter(Boolean))];
+    const result = ['none', ...uniqueNames.sort()];
+    return result;
   }
 };
 
@@ -177,6 +255,8 @@ export const convertDbCustomerToFrontend = (dbCustomer: Customer) => ({
   numberOfPax: dbCustomer.number_of_pax,
   packageType: dbCustomer.package_type,
   leadType: dbCustomer.lead_type,
+  service: dbCustomer.service,
+  assignee: dbCustomer.assignee,
   comments: [], // Will be loaded separately
   updatedAt: dbCustomer.updated_at,
 });
@@ -194,6 +274,8 @@ export const convertFrontendCustomerToDb = (frontendCustomer: Omit<FrontendCusto
   number_of_pax: frontendCustomer.numberOfPax,
   package_type: frontendCustomer.packageType,
   lead_type: frontendCustomer.leadType,
+  service: frontendCustomer.service,
+  assignee: frontendCustomer.assignee,
 });
 
 // Helper function to convert partial frontend customer updates to database format
@@ -211,6 +293,8 @@ export const convertPartialFrontendCustomerToDb = (updates: Partial<FrontendCust
   if (updates.numberOfPax !== undefined) dbUpdates.number_of_pax = updates.numberOfPax || undefined;
   if (updates.packageType !== undefined) dbUpdates.package_type = updates.packageType;
   if (updates.leadType !== undefined) dbUpdates.lead_type = updates.leadType;
+  if (updates.service !== undefined) dbUpdates.service = updates.service;
+  if (updates.assignee !== undefined) dbUpdates.assignee = updates.assignee;
   
   return dbUpdates;
 };
