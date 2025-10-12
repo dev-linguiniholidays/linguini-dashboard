@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, Users, User, Shield } from 'lucide-react';
+import { Home, Users, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 const navigation = [

@@ -145,7 +145,7 @@ export const CustomerForm = ({
         });
       }
       onClose();
-    } catch (error) {
+    } catch (_error) {
       toast.error(customer ? 'Failed to update customer' : 'Failed to add customer');
     }
   };

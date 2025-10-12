@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Customer, Comment, mockCustomers } from '@/lib/mockData';
-import { customerService, commentService, convertDbCustomerToFrontend, convertFrontendCustomerToDb } from '@/lib/database';
+import { customerService, commentService, convertDbCustomerToFrontend, convertFrontendCustomerToDb, convertPartialFrontendCustomerToDb } from '@/lib/database';
 import { supabase } from '@/lib/supabase';
 
 export const useCustomers = () => {
@@ -10,6 +10,7 @@ export const useCustomers = () => {
 
   useEffect(() => {
     const loadCustomers = async () => {
+      setIsLoading(true);
       try {
         if (supabase) {
           // Use Supabase database
@@ -35,12 +36,9 @@ export const useCustomers = () => {
           
           setCustomers(customersWithComments);
         } else {
-          // Use mock data
-          const timer = setTimeout(() => {
-            setCustomers(customersDataRef.current);
-            setIsLoading(false);
-          }, 100);
-          return () => clearTimeout(timer);
+          // Use mock data with a small delay to show loading
+          await new Promise(resolve => setTimeout(resolve, 500));
+          setCustomers(customersDataRef.current);
         }
       } catch (error) {
         console.error('Error loading customers:', error);
@@ -83,7 +81,7 @@ export const useCustomers = () => {
     try {
       if (supabase) {
         // Use Supabase database
-        const dbUpdates = convertFrontendCustomerToDb(updates);
+        const dbUpdates = convertPartialFrontendCustomerToDb(updates);
         const updatedCustomer = await customerService.update(id, dbUpdates);
         const frontendCustomer = convertDbCustomerToFrontend(updatedCustomer);
         setCustomers(prev => prev.map(c => c.id === id ? frontendCustomer : c));

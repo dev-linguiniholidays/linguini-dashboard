@@ -131,7 +131,7 @@ export const CustomerDetails = ({
           border: 'none',
         },
       });
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to update customer');
     }
   };
@@ -152,7 +152,7 @@ export const CustomerDetails = ({
         setTimeout(() => {
           onClose();
         }, 1000);
-      } catch (error) {
+      } catch (_error) {
         toast.error('Failed to add comment');
       }
     }
@@ -198,7 +198,7 @@ export const CustomerDetails = ({
             <DialogTitle className="text-xl font-semibold">
               Customer Details
             </DialogTitle>
-            <div className="flex gap-2">
+            <div className="flex gap-3 mr-8">
               {isEditing ? (
                 <>
                   <Button onClick={handleSave} disabled={isLoading} size="sm">

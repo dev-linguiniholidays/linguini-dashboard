@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { Database } from './supabase';
+import { Customer as FrontendCustomer } from './mockData';
 
 type Customer = Database['public']['Tables']['customers']['Row'];
 type CustomerInsert = Database['public']['Tables']['customers']['Insert'];
@@ -181,7 +182,7 @@ export const convertDbCustomerToFrontend = (dbCustomer: Customer) => ({
 });
 
 // Helper function to convert frontend customer to database format
-export const convertFrontendCustomerToDb = (frontendCustomer: any): CustomerInsert => ({
+export const convertFrontendCustomerToDb = (frontendCustomer: Omit<FrontendCustomer, 'id' | 'updatedAt' | 'comments'>): CustomerInsert => ({
   name: frontendCustomer.name,
   phone: frontendCustomer.phone,
   destination: frontendCustomer.destination || null,
@@ -194,3 +195,22 @@ export const convertFrontendCustomerToDb = (frontendCustomer: any): CustomerInse
   package_type: frontendCustomer.packageType,
   lead_type: frontendCustomer.leadType,
 });
+
+// Helper function to convert partial frontend customer updates to database format
+export const convertPartialFrontendCustomerToDb = (updates: Partial<FrontendCustomer>): CustomerUpdate => {
+  const dbUpdates: CustomerUpdate = {};
+  
+  if (updates.name !== undefined) dbUpdates.name = updates.name;
+  if (updates.phone !== undefined) dbUpdates.phone = updates.phone;
+  if (updates.destination !== undefined) dbUpdates.destination = updates.destination || null;
+  if (updates.status !== undefined) dbUpdates.status = updates.status;
+  if (updates.description !== undefined) dbUpdates.description = updates.description || null;
+  if (updates.travelStartDate !== undefined) dbUpdates.travel_start_date = updates.travelStartDate || undefined;
+  if (updates.travelEndDate !== undefined) dbUpdates.travel_end_date = updates.travelEndDate || undefined;
+  if (updates.leadCreationDate !== undefined) dbUpdates.lead_creation_date = updates.leadCreationDate || undefined;
+  if (updates.numberOfPax !== undefined) dbUpdates.number_of_pax = updates.numberOfPax || undefined;
+  if (updates.packageType !== undefined) dbUpdates.package_type = updates.packageType;
+  if (updates.leadType !== undefined) dbUpdates.lead_type = updates.leadType;
+  
+  return dbUpdates;
+};

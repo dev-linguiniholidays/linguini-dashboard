@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useCustomer } from '@/hooks/useCustomers';
+// import { useCustomer } from '@/hooks/useCustomers'; // Unused import
 import { Customer } from '@/lib/mockData';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,8 @@ import { CustomerDetails } from '@/components/CustomerDetails';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useAuth } from '@/contexts/AuthContext';
 import { displayValue } from '@/lib/displayUtils';
+import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const statusColors = {
   fresh: 'bg-blue-100 text-blue-800',
@@ -41,10 +43,21 @@ const leadTypeColors = {
 export default function CustomerDetailPage() {
   const params = useParams();
   const customerId = params.id as string;
-  const customer = useCustomer(customerId);
-  const { updateCustomer, addComment } = useCustomers();
+  const { customers, updateCustomer, addComment, isLoading } = useCustomers();
+  const customer = customers.find(c => c.id === customerId);
   const { user } = useAuth();
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading customer details...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!customer) {
     return (
@@ -111,18 +124,36 @@ export default function CustomerDetailPage() {
     return labels[type] || type;
   };
 
-  const handleUpdate = (id: string, updates: Partial<Customer>) => {
-    updateCustomer({ id, ...updates });
+  const handleUpdate = async (id: string, updates: Partial<Customer>) => {
+    try {
+      await updateCustomer({ id, ...updates });
+    } catch (_error) {
+      toast.error('Failed to update customer', {
+        style: {
+          backgroundColor: '#ef4444',
+          color: 'white',
+        },
+      });
+    }
   };
 
-  const handleAddComment = (customerId: string, text: string) => {
+  const handleAddComment = async (customerId: string, text: string) => {
     if (!user) return;
-    addComment({ 
-      customerId, 
-      text, 
-      userId: user.id, 
-      userName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User' 
-    });
+    try {
+      await addComment({ 
+        customerId, 
+        text, 
+        userId: user.id, 
+        userName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User' 
+      });
+    } catch (_error) {
+      toast.error('Failed to add comment', {
+        style: {
+          backgroundColor: '#ef4444',
+          color: 'white',
+        },
+      });
+    }
   };
 
   return (

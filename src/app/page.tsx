@@ -7,10 +7,11 @@ import { CustomerForm } from '@/components/CustomerForm';
 import { CustomerDetails } from '@/components/CustomerDetails';
 import { useCustomers, useCustomerSearch } from '@/hooks/useCustomers';
 import { useAuth } from '@/contexts/AuthContext';
-import { Users, TrendingUp, Clock, CheckCircle } from 'lucide-react';
+import { Users, TrendingUp, Clock, CheckCircle, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function Dashboard() {
-  const { customers: allCustomers, addCustomer, updateCustomer, deleteCustomer, addComment } = useCustomers();
+  const { customers: allCustomers, addCustomer, updateCustomer, deleteCustomer, addComment, isLoading } = useCustomers();
   const { user } = useAuth();
   const {
     customers,
@@ -57,31 +58,67 @@ export default function Dashboard() {
     setIsDetailsModalOpen(true);
   };
 
-  const handleSave = (customerData: Omit<Customer, 'id' | 'updatedAt' | 'comments'>) => {
-    addCustomer(customerData);
-    setIsAddModalOpen(false);
-  };
-
-  const handleUpdate = (id: string, updates: Partial<Customer>) => {
-    updateCustomer({ id, ...updates });
-    setIsEditModalOpen(false);
-    setIsDetailsModalOpen(false);
-  };
-
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this customer?')) {
-      deleteCustomer(id);
+  const handleSave = async (customerData: Omit<Customer, 'id' | 'updatedAt' | 'comments'>) => {
+    try {
+      await addCustomer(customerData);
+      setIsAddModalOpen(false);
+    } catch (_error) {
+      toast.error('Failed to add customer', {
+        style: {
+          backgroundColor: '#ef4444',
+          color: 'white',
+        },
+      });
     }
   };
 
-  const handleAddComment = (customerId: string, text: string) => {
+  const handleUpdate = async (id: string, updates: Partial<Customer>) => {
+    try {
+      await updateCustomer({ id, ...updates });
+      setIsEditModalOpen(false);
+      setIsDetailsModalOpen(false);
+    } catch (_error) {
+      toast.error('Failed to update customer', {
+        style: {
+          backgroundColor: '#ef4444',
+          color: 'white',
+        },
+      });
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm('Are you sure you want to delete this customer?')) {
+      try {
+        await deleteCustomer(id);
+      } catch (_error) {
+        toast.error('Failed to delete customer', {
+          style: {
+            backgroundColor: '#ef4444',
+            color: 'white',
+          },
+        });
+      }
+    }
+  };
+
+  const handleAddComment = async (customerId: string, text: string) => {
     if (!user) return;
-    addComment({ 
-      customerId, 
-      text, 
-      userId: user.id, 
-      userName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User' 
-    });
+    try {
+      await addComment({ 
+        customerId, 
+        text, 
+        userId: user.id, 
+        userName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User' 
+      });
+    } catch (_error) {
+      toast.error('Failed to add comment', {
+        style: {
+          backgroundColor: '#ef4444',
+          color: 'white',
+        },
+      });
+    }
   };
 
   return (
@@ -101,7 +138,14 @@ export default function Dashboard() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Customers</p>
-              <p className="text-2xl font-bold text-gray-900">{totalCustomers}</p>
+              {isLoading ? (
+                <div className="flex items-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                  <span className="ml-2 text-gray-400">Loading...</span>
+                </div>
+              ) : (
+                <p className="text-2xl font-bold text-gray-900">{totalCustomers}</p>
+              )}
             </div>
           </div>
         </div>
@@ -113,7 +157,14 @@ export default function Dashboard() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Hot Leads</p>
-              <p className="text-2xl font-bold text-gray-900">{hotLeads}</p>
+              {isLoading ? (
+                <div className="flex items-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                  <span className="ml-2 text-gray-400">Loading...</span>
+                </div>
+              ) : (
+                <p className="text-2xl font-bold text-gray-900">{hotLeads}</p>
+              )}
             </div>
           </div>
         </div>
@@ -125,7 +176,14 @@ export default function Dashboard() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Converted</p>
-              <p className="text-2xl font-bold text-gray-900">{convertedLeads}</p>
+              {isLoading ? (
+                <div className="flex items-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                  <span className="ml-2 text-gray-400">Loading...</span>
+                </div>
+              ) : (
+                <p className="text-2xl font-bold text-gray-900">{convertedLeads}</p>
+              )}
             </div>
           </div>
         </div>
@@ -137,7 +195,14 @@ export default function Dashboard() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Ongoing</p>
-              <p className="text-2xl font-bold text-gray-900">{ongoingLeads}</p>
+              {isLoading ? (
+                <div className="flex items-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                  <span className="ml-2 text-gray-400">Loading...</span>
+                </div>
+              ) : (
+                <p className="text-2xl font-bold text-gray-900">{ongoingLeads}</p>
+              )}
             </div>
           </div>
         </div>
@@ -149,24 +214,33 @@ export default function Dashboard() {
           <h2 className="text-xl font-semibold text-gray-900">All Customers</h2>
         </div>
         
-        <CustomerTable
-          customers={customers}
-          onEdit={handleEdit}
-          onView={handleView}
-          onDelete={handleDelete}
-          onAdd={handleAdd}
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          statusFilter={statusFilter}
-          onStatusFilterChange={setStatusFilter}
-          destinationFilter={destinationFilter}
-          onDestinationFilterChange={setDestinationFilter}
-          packageTypeFilter={packageTypeFilter}
-          onPackageTypeFilterChange={setPackageTypeFilter}
-          leadTypeFilter={leadTypeFilter}
-          onLeadTypeFilterChange={setLeadTypeFilter}
-          onViewComments={handleViewComments}
-        />
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+              <p className="text-gray-600">Loading customers...</p>
+            </div>
+          </div>
+        ) : (
+          <CustomerTable
+            customers={customers}
+            onEdit={handleEdit}
+            onView={handleView}
+            onDelete={handleDelete}
+            onAdd={handleAdd}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            destinationFilter={destinationFilter}
+            onDestinationFilterChange={setDestinationFilter}
+            packageTypeFilter={packageTypeFilter}
+            onPackageTypeFilterChange={setPackageTypeFilter}
+            leadTypeFilter={leadTypeFilter}
+            onLeadTypeFilterChange={setLeadTypeFilter}
+            onViewComments={handleViewComments}
+          />
+        )}
       </div>
 
       {/* Add Customer Modal */}

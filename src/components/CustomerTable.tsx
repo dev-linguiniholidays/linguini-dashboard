@@ -87,7 +87,7 @@ export const CustomerTable = ({
           border: 'none',
         },
       });
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to delete customer');
     }
   };
