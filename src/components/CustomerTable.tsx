@@ -7,12 +7,15 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, Edit, Trash2, MessageSquare } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, MessageSquare, Eye } from 'lucide-react';
 import { RoleGuard } from './RoleGuard';
+import { displayValue } from '@/lib/displayUtils';
+import { toast } from 'sonner';
 
 interface CustomerTableProps {
   customers: Customer[];
   onEdit: (customer: Customer) => void;
+  onView: (customer: Customer) => void;
   onDelete: (id: string) => void;
   onAdd: () => void;
   searchTerm: string;
@@ -56,6 +59,7 @@ const leadTypeColors = {
 export const CustomerTable = ({
   customers,
   onEdit,
+  onView,
   onDelete,
   onAdd,
   searchTerm,
@@ -72,6 +76,21 @@ export const CustomerTable = ({
 }: CustomerTableProps) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  const handleDelete = async (id: string) => {
+    try {
+      await onDelete(id);
+      toast.success('Customer deleted successfully!', {
+        style: {
+          backgroundColor: '#10b981',
+          color: 'white',
+          border: 'none',
+        },
+      });
+    } catch (error) {
+      toast.error('Failed to delete customer');
+    }
+  };
 
   const totalPages = Math.ceil(customers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -216,7 +235,7 @@ export const CustomerTable = ({
               <TableRow key={customer.id}>
                 <TableCell className="font-medium">{customer.name}</TableCell>
                 <TableCell>{customer.phone}</TableCell>
-                <TableCell>{customer.destination}</TableCell>
+                <TableCell>{displayValue(customer.destination)}</TableCell>
                 <TableCell>
                   <Badge className={statusColors[customer.status]}>
                     {getStatusLabel(customer.status)}
@@ -224,7 +243,7 @@ export const CustomerTable = ({
                 </TableCell>
                 <TableCell>{formatDate(customer.travelStartDate)}</TableCell>
                 <TableCell>{formatDate(customer.travelEndDate)}</TableCell>
-                <TableCell>{customer.numberOfPax}</TableCell>
+                <TableCell>{displayValue(customer.numberOfPax)}</TableCell>
                 <TableCell>
                   <Badge className={packageTypeColors[customer.packageType]}>
                     {getPackageTypeLabel(customer.packageType)}
@@ -252,6 +271,13 @@ export const CustomerTable = ({
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => onView(customer)}
+                    >
+                      <Eye className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => onEdit(customer)}
                     >
                       <Edit className="h-3 w-3" />
@@ -260,7 +286,7 @@ export const CustomerTable = ({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => onDelete(customer.id)}
+                        onClick={() => handleDelete(customer.id)}
                         className="text-red-600 hover:text-red-700"
                       >
                         <Trash2 className="h-3 w-3" />

@@ -6,10 +6,11 @@ import { CustomerTable } from '@/components/CustomerTable';
 import { CustomerForm } from '@/components/CustomerForm';
 import { CustomerDetails } from '@/components/CustomerDetails';
 import { useCustomers, useCustomerSearch } from '@/hooks/useCustomers';
-import { getCurrentUser } from '@/lib/roleUtils';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function CustomersPage() {
-  const { addCustomer, updateCustomer, deleteCustomer, addComment } = useCustomers();
+  const { customers: allCustomers, addCustomer, updateCustomer, deleteCustomer, addComment } = useCustomers();
+  const { user } = useAuth();
   const {
     customers,
     searchTerm,
@@ -22,7 +23,7 @@ export default function CustomersPage() {
     setPackageTypeFilter,
     leadTypeFilter,
     setLeadTypeFilter,
-  } = useCustomerSearch();
+  } = useCustomerSearch(allCustomers);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -39,6 +40,10 @@ export default function CustomersPage() {
     setIsEditModalOpen(true);
   };
 
+  const handleView = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setIsDetailsModalOpen(true);
+  };
 
   const handleViewComments = (customer: Customer) => {
     setSelectedCustomer(customer);
@@ -63,8 +68,13 @@ export default function CustomersPage() {
   };
 
   const handleAddComment = (customerId: string, text: string) => {
-    const currentUser = getCurrentUser();
-    addComment({ customerId, text, userId: currentUser.id, userName: currentUser.name });
+    if (!user) return;
+    addComment({ 
+      customerId, 
+      text, 
+      userId: user.id, 
+      userName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User' 
+    });
   };
 
   return (
@@ -77,6 +87,7 @@ export default function CustomersPage() {
       <CustomerTable
         customers={customers}
         onEdit={handleEdit}
+        onView={handleView}
         onDelete={handleDelete}
         onAdd={handleAdd}
         searchTerm={searchTerm}

@@ -33,9 +33,44 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const { data: { session } } = await supabase.auth.getSession();
         setUser(session?.user ?? null);
       } else {
-        // Mock authentication - check localStorage
+        // Mock authentication - check localStorage or set default user
         const storedUser = localStorage.getItem('mock-user');
-        setUser(storedUser ? JSON.parse(storedUser) : null);
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        } else {
+          // Set default mock user for development
+          const defaultUser = {
+            id: 'mock-user-id',
+            email: 'admin@linguiniholidays.com',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            aud: 'authenticated',
+            role: 'authenticated',
+            app_metadata: {},
+            user_metadata: {},
+            identities: [],
+            factors: [],
+            email_confirmed_at: new Date().toISOString(),
+            last_sign_in_at: new Date().toISOString(),
+            phone: '',
+            phone_confirmed_at: undefined,
+            confirmed_at: new Date().toISOString(),
+            recovery_sent_at: undefined,
+            new_email: undefined,
+            invited_at: undefined,
+            action_link: undefined,
+            email_change_sent_at: undefined,
+            new_phone: undefined,
+            phone_change_sent_at: undefined,
+            reauthentication_sent_at: undefined,
+            reauthentication_confirm_at: undefined,
+            is_sso_user: false,
+            deleted_at: undefined,
+            is_anonymous: false,
+          };
+          localStorage.setItem('mock-user', JSON.stringify(defaultUser));
+          setUser(defaultUser);
+        }
       }
       setLoading(false);
     };

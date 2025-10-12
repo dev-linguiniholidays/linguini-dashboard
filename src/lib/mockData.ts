@@ -27,7 +27,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '1',
     name: 'John Smith',
-    phone: '+1-555-0123',
+    phone: '+91 9876543210',
     destination: 'Paris, France',
     status: 'hot',
     description: 'Planning a romantic getaway for anniversary',
@@ -49,7 +49,7 @@ export const mockCustomers: Customer[] = [
         id: 'c2',
         text: 'Follow up call scheduled for tomorrow',
         userId: 'user1',
-        userName: 'Regular User',
+        userName: 'Admin User',
         timestamp: '2024-01-14T09:15:00Z'
       }
     ],
@@ -58,7 +58,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '2',
     name: 'Sarah Johnson',
-    phone: '+1-555-0124',
+    phone: '+91 9876543211',
     destination: 'Tokyo, Japan',
     status: 'ongoing',
     description: 'Business trip with family extension',
@@ -73,7 +73,7 @@ export const mockCustomers: Customer[] = [
         id: 'c3',
         text: 'Customer prefers group tours',
         userId: 'user1',
-        userName: 'Regular User',
+        userName: 'Admin User',
         timestamp: '2024-01-14T16:20:00Z'
       }
     ],
@@ -82,7 +82,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '3',
     name: 'Mike Chen',
-    phone: '+1-555-0125',
+    phone: '+91 9876543212',
     destination: 'Bali, Indonesia',
     status: 'converted',
     description: 'Honeymoon trip - completed successfully',
@@ -104,7 +104,7 @@ export const mockCustomers: Customer[] = [
         id: 'c5',
         text: 'Customer recommended us to friends',
         userId: 'user1',
-        userName: 'Regular User',
+        userName: 'Admin User',
         timestamp: '2024-01-27T18:30:00Z'
       }
     ],
@@ -113,7 +113,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '4',
     name: 'Emily Davis',
-    phone: '+1-555-0126',
+    phone: '+91 9876543213',
     destination: 'Rome, Italy',
     status: 'fresh',
     description: 'Cultural tour with art museums focus',
@@ -129,7 +129,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '5',
     name: 'David Wilson',
-    phone: '+1-555-0127',
+    phone: '+91 9876543214',
     destination: 'New York, USA',
     status: 'dead',
     description: 'Cancelled due to work commitments',
@@ -153,7 +153,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '6',
     name: 'Lisa Brown',
-    phone: '+1-555-0128',
+    phone: '+91 9876543215',
     destination: 'Dubai, UAE',
     status: 'hot',
     description: 'Luxury shopping and desert safari',
@@ -177,7 +177,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '7',
     name: 'Robert Taylor',
-    phone: '+1-555-0129',
+    phone: '+91 9876543216',
     destination: 'London, UK',
     status: 'no-response',
     description: 'Business conference attendance',
@@ -192,7 +192,7 @@ export const mockCustomers: Customer[] = [
         id: 'c8',
         text: 'No response to follow-up calls',
         userId: 'user1',
-        userName: 'Regular User',
+        userName: 'Admin User',
         timestamp: '2024-01-12T10:00:00Z'
       }
     ],
@@ -201,7 +201,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '8',
     name: 'Maria Garcia',
-    phone: '+1-555-0130',
+    phone: '+91 9876543217',
     destination: 'Barcelona, Spain',
     status: 'future',
     description: 'Food and wine tour',
@@ -216,7 +216,7 @@ export const mockCustomers: Customer[] = [
         id: 'c9',
         text: 'Customer interested in culinary experiences',
         userId: 'user1',
-        userName: 'Regular User',
+        userName: 'Admin User',
         timestamp: '2024-01-09T12:10:00Z'
       }
     ],
@@ -225,7 +225,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '9',
     name: 'James Anderson',
-    phone: '+1-555-0131',
+    phone: '+91 9876543218',
     destination: 'Sydney, Australia',
     status: 'hot',
     description: 'Adventure sports and wildlife tour',
@@ -249,7 +249,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '10',
     name: 'Jennifer Lee',
-    phone: '+1-555-0132',
+    phone: '+91 9876543219',
     destination: 'Cape Town, South Africa',
     status: 'ongoing',
     description: 'Safari and wine tasting experience',
@@ -264,7 +264,7 @@ export const mockCustomers: Customer[] = [
         id: 'c11',
         text: 'Referred by Mike Chen - very satisfied customer',
         userId: 'user1',
-        userName: 'Regular User',
+        userName: 'Admin User',
         timestamp: '2024-01-13T11:45:00Z'
       }
     ],
@@ -273,7 +273,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '11',
     name: 'Michael Rodriguez',
-    phone: '+1-555-0133',
+    phone: '+91 9876543220',
     destination: 'Thailand',
     status: 'fresh',
     description: 'Beach vacation and cultural exploration',
@@ -289,7 +289,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '12',
     name: 'Amanda White',
-    phone: '+1-555-0134',
+    phone: '+91 9876543221',
     destination: 'Switzerland',
     status: 'converted',
     description: 'Skiing holiday - trip completed',
@@ -313,7 +313,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '13',
     name: 'Christopher Kim',
-    phone: '+1-555-0135',
+    phone: '+91 9876543222',
     destination: 'Singapore',
     status: 'hot',
     description: 'Business trip with family leisure time',
@@ -337,7 +337,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '14',
     name: 'Rachel Thompson',
-    phone: '+1-555-0136',
+    phone: '+91 9876543223',
     destination: 'Greece',
     status: 'ongoing',
     description: 'Island hopping and historical sites',
@@ -352,7 +352,7 @@ export const mockCustomers: Customer[] = [
         id: 'c14',
         text: 'Interested in cultural and historical tours',
         userId: 'user1',
-        userName: 'Regular User',
+        userName: 'Admin User',
         timestamp: '2024-01-12T16:45:00Z'
       }
     ],
@@ -361,7 +361,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '15',
     name: 'Daniel Martinez',
-    phone: '+1-555-0137',
+    phone: '+91 9876543224',
     destination: 'Morocco',
     status: 'fresh',
     description: 'Desert adventure and cultural immersion',
@@ -377,7 +377,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '16',
     name: 'Sophie Williams',
-    phone: '+1-555-0138',
+    phone: '+91 9876543225',
     destination: 'Norway',
     status: 'future',
     description: 'Northern lights and fjord cruise',
@@ -392,7 +392,7 @@ export const mockCustomers: Customer[] = [
         id: 'c15',
         text: 'Planning far ahead for winter trip',
         userId: 'user1',
-        userName: 'Regular User',
+        userName: 'Admin User',
         timestamp: '2024-01-11T12:00:00Z'
       }
     ],
@@ -401,7 +401,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '17',
     name: 'Kevin Johnson',
-    phone: '+1-555-0139',
+    phone: '+91 9876543226',
     destination: 'India',
     status: 'dead',
     description: 'Cancelled due to visa issues',
@@ -425,7 +425,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '18',
     name: 'Nicole Davis',
-    phone: '+1-555-0140',
+    phone: '+91 9876543227',
     destination: 'Peru',
     status: 'hot',
     description: 'Machu Picchu trek and cultural tour',
@@ -449,7 +449,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '19',
     name: 'Alex Thompson',
-    phone: '+1-555-0141',
+    phone: '+91 9876543228',
     destination: 'Vietnam',
     status: 'ongoing',
     description: 'Food tour and motorbike adventure',
@@ -464,7 +464,7 @@ export const mockCustomers: Customer[] = [
         id: 'c18',
         text: 'Food enthusiast, wants authentic local experiences',
         userId: 'user1',
-        userName: 'Regular User',
+        userName: 'Admin User',
         timestamp: '2024-01-14T15:20:00Z'
       }
     ],
@@ -473,7 +473,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '20',
     name: 'Jessica Brown',
-    phone: '+1-555-0142',
+    phone: '+91 9876543229',
     destination: 'Iceland',
     status: 'converted',
     description: 'Aurora borealis tour - completed successfully',
@@ -497,7 +497,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '21',
     name: 'Ryan Wilson',
-    phone: '+1-555-0143',
+    phone: '+91 9876543230',
     destination: 'Croatia',
     status: 'fresh',
     description: 'Coastal road trip and island hopping',
@@ -513,7 +513,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '22',
     name: 'Megan Taylor',
-    phone: '+1-555-0144',
+    phone: '+91 9876543231',
     destination: 'Portugal',
     status: 'no-response',
     description: 'Wine country and coastal cities',
@@ -528,7 +528,7 @@ export const mockCustomers: Customer[] = [
         id: 'c20',
         text: 'No response to emails and calls',
         userId: 'user1',
-        userName: 'Regular User',
+        userName: 'Admin User',
         timestamp: '2024-01-15T14:30:00Z'
       }
     ],
@@ -537,7 +537,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '23',
     name: 'Brandon Garcia',
-    phone: '+1-555-0145',
+    phone: '+91 9876543232',
     destination: 'Turkey',
     status: 'hot',
     description: 'Historical sites and hot air balloon ride',
@@ -561,7 +561,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '24',
     name: 'Stephanie Lee',
-    phone: '+1-555-0146',
+    phone: '+91 9876543233',
     destination: 'New Zealand',
     status: 'ongoing',
     description: 'Lord of the Rings tour and adventure sports',
@@ -576,7 +576,7 @@ export const mockCustomers: Customer[] = [
         id: 'c22',
         text: 'Huge LOTR fan, wants comprehensive tour',
         userId: 'user1',
-        userName: 'Regular User',
+        userName: 'Admin User',
         timestamp: '2024-01-15T16:45:00Z'
       }
     ],
@@ -585,7 +585,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '25',
     name: 'Tyler Anderson',
-    phone: '+1-555-0147',
+    phone: '+91 9876543234',
     destination: 'Brazil',
     status: 'fresh',
     description: 'Carnival experience and Amazon rainforest',
@@ -601,7 +601,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '26',
     name: 'Ashley Rodriguez',
-    phone: '+1-555-0148',
+    phone: '+91 9876543235',
     destination: 'Egypt',
     status: 'future',
     description: 'Pyramids and Nile cruise',
@@ -616,7 +616,7 @@ export const mockCustomers: Customer[] = [
         id: 'c23',
         text: 'Family trip, wants educational experience for kids',
         userId: 'user1',
-        userName: 'Regular User',
+        userName: 'Admin User',
         timestamp: '2024-01-12T12:30:00Z'
       }
     ],
@@ -625,7 +625,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '27',
     name: 'Jordan White',
-    phone: '+1-555-0149',
+    phone: '+91 9876543236',
     destination: 'South Korea',
     status: 'converted',
     description: 'K-pop culture tour - completed',
@@ -649,7 +649,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '28',
     name: 'Samantha Kim',
-    phone: '+1-555-0150',
+    phone: '+91 9876543237',
     destination: 'Chile',
     status: 'hot',
     description: 'Atacama Desert and Patagonia trek',
@@ -673,7 +673,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '29',
     name: 'Marcus Thompson',
-    phone: '+1-555-0151',
+    phone: '+91 9876543238',
     destination: 'Kenya',
     status: 'ongoing',
     description: 'Safari and Maasai cultural experience',
@@ -688,7 +688,7 @@ export const mockCustomers: Customer[] = [
         id: 'c26',
         text: 'Wildlife photography enthusiast',
         userId: 'user1',
-        userName: 'Regular User',
+        userName: 'Admin User',
         timestamp: '2024-01-16T11:30:00Z'
       }
     ],
@@ -697,7 +697,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '30',
     name: 'Lauren Davis',
-    phone: '+1-555-0152',
+    phone: '+91 9876543239',
     destination: 'Scotland',
     status: 'fresh',
     description: 'Highlands tour and whisky tasting',
@@ -713,7 +713,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '31',
     name: 'Nathan Wilson',
-    phone: '+1-555-0153',
+    phone: '+91 9876543240',
     destination: 'Malaysia',
     status: 'dead',
     description: 'Cancelled due to budget constraints',
@@ -737,7 +737,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '32',
     name: 'Hannah Johnson',
-    phone: '+1-555-0154',
+    phone: '+91 9876543241',
     destination: 'Finland',
     status: 'future',
     description: 'Santa Claus Village and Northern Lights',
@@ -752,7 +752,7 @@ export const mockCustomers: Customer[] = [
         id: 'c28',
         text: 'Family with young children, Christmas trip',
         userId: 'user1',
-        userName: 'Regular User',
+        userName: 'Admin User',
         timestamp: '2024-01-14T13:45:00Z'
       }
     ],
@@ -761,7 +761,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '33',
     name: 'Cameron Brown',
-    phone: '+1-555-0155',
+    phone: '+91 9876543242',
     destination: 'Jordan',
     status: 'hot',
     description: 'Petra and Wadi Rum desert adventure',
@@ -785,7 +785,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '34',
     name: 'Olivia Martinez',
-    phone: '+1-555-0156',
+    phone: '+91 9876543243',
     destination: 'Slovenia',
     status: 'ongoing',
     description: 'Lake Bled and Julian Alps hiking',
@@ -800,7 +800,7 @@ export const mockCustomers: Customer[] = [
         id: 'c30',
         text: 'Solo traveler, interested in hiking and nature',
         userId: 'user1',
-        userName: 'Regular User',
+        userName: 'Admin User',
         timestamp: '2024-01-15T12:15:00Z'
       }
     ],
@@ -809,7 +809,7 @@ export const mockCustomers: Customer[] = [
   {
     id: '35',
     name: 'Ethan Taylor',
-    phone: '+1-555-0157',
+    phone: '+91 9876543244',
     destination: 'Maldives',
     status: 'converted',
     description: 'Luxury resort and diving - completed',

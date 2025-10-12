@@ -8,6 +8,90 @@ const hasValidCredentials = supabaseUrl !== 'https://your-project.supabase.co' &
 
 export const supabase = hasValidCredentials ? createClient(supabaseUrl, supabaseAnonKey) : null
 
+// Database types
+export interface Database {
+  public: {
+    Tables: {
+      customers: {
+        Row: {
+          id: string
+          name: string
+          phone: string
+          destination: string | null
+          status: 'fresh' | 'no-response' | 'ongoing' | 'converted' | 'dead' | 'future' | 'hot'
+          description: string | null
+          travel_start_date: string | null
+          travel_end_date: string | null
+          lead_creation_date: string
+          number_of_pax: number
+          package_type: 'private' | 'group'
+          lead_type: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          phone: string
+          destination?: string | null
+          status?: 'fresh' | 'no-response' | 'ongoing' | 'converted' | 'dead' | 'future' | 'hot'
+          description?: string | null
+          travel_start_date?: string | null
+          travel_end_date?: string | null
+          lead_creation_date?: string
+          number_of_pax?: number
+          package_type?: 'private' | 'group'
+          lead_type?: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          phone?: string
+          destination?: string | null
+          status?: 'fresh' | 'no-response' | 'ongoing' | 'converted' | 'dead' | 'future' | 'hot'
+          description?: string | null
+          travel_start_date?: string | null
+          travel_end_date?: string | null
+          lead_creation_date?: string
+          number_of_pax?: number
+          package_type?: 'private' | 'group'
+          lead_type?: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other'
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      customer_comments: {
+        Row: {
+          id: string
+          customer_id: string
+          text: string
+          user_id: string
+          user_name: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          customer_id: string
+          text: string
+          user_id: string
+          user_name: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          customer_id?: string
+          text?: string
+          user_id?: string
+          user_name?: string
+          created_at?: string
+        }
+      }
+    }
+  }
+}
+
 // Mock user for development
 const mockUser = {
   id: 'mock-user-id',
@@ -17,7 +101,9 @@ const mockUser = {
   aud: 'authenticated',
   role: 'authenticated',
   app_metadata: {},
-  user_metadata: {},
+  user_metadata: {
+    full_name: 'Admin User'
+  },
   identities: [],
   factors: [],
   email_confirmed_at: new Date().toISOString(),

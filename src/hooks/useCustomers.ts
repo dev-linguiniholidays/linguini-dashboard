@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Customer, Comment, mockCustomers } from '@/lib/mockData';
+import { customerService, commentService, convertDbCustomerToFrontend, convertFrontendCustomerToDb } from '@/lib/database';
+import { supabase } from '@/lib/supabase';
 
 export const useCustomers = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -7,65 +9,172 @@ export const useCustomers = () => {
   const customersDataRef = useRef<Customer[]>([...mockCustomers]);
 
   useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setCustomers(customersDataRef.current);
-      setIsLoading(false);
-    }, 100);
-    return () => clearTimeout(timer);
+    const loadCustomers = async () => {
+      try {
+        if (supabase) {
+          // Use Supabase database
+          const dbCustomers = await customerService.getAll();
+          const frontendCustomers = dbCustomers.map(convertDbCustomerToFrontend);
+          
+          // Load comments for each customer
+          const customersWithComments = await Promise.all(
+            frontendCustomers.map(async (customer) => {
+              const comments = await commentService.getByCustomerId(customer.id);
+              return {
+                ...customer,
+                comments: comments.map(comment => ({
+                  id: comment.id,
+                  text: comment.text,
+                  userId: comment.user_id,
+                  userName: comment.user_name,
+                  timestamp: comment.created_at,
+                }))
+              };
+            })
+          );
+          
+          setCustomers(customersWithComments);
+        } else {
+          // Use mock data
+          const timer = setTimeout(() => {
+            setCustomers(customersDataRef.current);
+            setIsLoading(false);
+          }, 100);
+          return () => clearTimeout(timer);
+        }
+      } catch (error) {
+        console.error('Error loading customers:', error);
+        // Fallback to mock data
+        setCustomers(customersDataRef.current);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadCustomers();
   }, []);
 
-  const addCustomer = (newCustomer: Omit<Customer, 'id' | 'updatedAt' | 'comments'>) => {
-    const customer: Customer = {
-      ...newCustomer,
-      id: Date.now().toString(),
-      updatedAt: new Date().toISOString(),
-      comments: [],
-    };
-    customersDataRef.current.push(customer);
-    setCustomers([...customersDataRef.current]);
+  const addCustomer = async (newCustomer: Omit<Customer, 'id' | 'updatedAt' | 'comments'>) => {
+    try {
+      if (supabase) {
+        // Use Supabase database
+        const dbCustomer = convertFrontendCustomerToDb(newCustomer);
+        const createdCustomer = await customerService.create(dbCustomer);
+        const frontendCustomer = convertDbCustomerToFrontend(createdCustomer);
+        setCustomers(prev => [frontendCustomer, ...prev]);
+      } else {
+        // Use mock data
+        const customer: Customer = {
+          ...newCustomer,
+          id: Date.now().toString(),
+          updatedAt: new Date().toISOString(),
+          comments: [],
+        };
+        customersDataRef.current.push(customer);
+        setCustomers([...customersDataRef.current]);
+      }
+    } catch (error) {
+      console.error('Error adding customer:', error);
+      throw error;
+    }
   };
 
-  const updateCustomer = ({ id, ...updates }: Partial<Customer> & { id: string }) => {
-    const index = customersDataRef.current.findIndex(c => c.id === id);
-    if (index === -1) throw new Error('Customer not found');
-    
-    customersDataRef.current[index] = {
-      ...customersDataRef.current[index],
-      ...updates,
-      updatedAt: new Date().toISOString(),
-    };
-    setCustomers([...customersDataRef.current]);
+  const updateCustomer = async ({ id, ...updates }: Partial<Customer> & { id: string }) => {
+    try {
+      if (supabase) {
+        // Use Supabase database
+        const dbUpdates = convertFrontendCustomerToDb(updates);
+        const updatedCustomer = await customerService.update(id, dbUpdates);
+        const frontendCustomer = convertDbCustomerToFrontend(updatedCustomer);
+        setCustomers(prev => prev.map(c => c.id === id ? frontendCustomer : c));
+      } else {
+        // Use mock data
+        const index = customersDataRef.current.findIndex(c => c.id === id);
+        if (index === -1) throw new Error('Customer not found');
+        
+        customersDataRef.current[index] = {
+          ...customersDataRef.current[index],
+          ...updates,
+          updatedAt: new Date().toISOString(),
+        };
+        setCustomers([...customersDataRef.current]);
+      }
+    } catch (error) {
+      console.error('Error updating customer:', error);
+      throw error;
+    }
   };
 
-  const deleteCustomer = (id: string) => {
-    const index = customersDataRef.current.findIndex(c => c.id === id);
-    if (index === -1) throw new Error('Customer not found');
-    
-    customersDataRef.current.splice(index, 1);
-    setCustomers([...customersDataRef.current]);
+  const deleteCustomer = async (id: string) => {
+    try {
+      if (supabase) {
+        // Use Supabase database
+        await customerService.delete(id);
+        setCustomers(prev => prev.filter(c => c.id !== id));
+      } else {
+        // Use mock data
+        const index = customersDataRef.current.findIndex(c => c.id === id);
+        if (index === -1) throw new Error('Customer not found');
+        
+        customersDataRef.current.splice(index, 1);
+        setCustomers([...customersDataRef.current]);
+      }
+    } catch (error) {
+      console.error('Error deleting customer:', error);
+      throw error;
+    }
   };
 
-  const addComment = ({ customerId, text, userId, userName }: { 
+  const addComment = async ({ customerId, text, userId, userName }: { 
     customerId: string; 
     text: string; 
     userId: string; 
     userName: string; 
   }) => {
-    const customerIndex = customersDataRef.current.findIndex(c => c.id === customerId);
-    if (customerIndex === -1) throw new Error('Customer not found');
-    
-    const newComment: Comment = {
-      id: Date.now().toString(),
-      text,
-      userId,
-      userName,
-      timestamp: new Date().toISOString(),
-    };
-    
-    customersDataRef.current[customerIndex].comments.unshift(newComment);
-    customersDataRef.current[customerIndex].updatedAt = new Date().toISOString();
-    setCustomers([...customersDataRef.current]);
+    try {
+      if (supabase) {
+        // Use Supabase database
+        const comment = await commentService.add({
+          customer_id: customerId,
+          text,
+          user_id: userId,
+          user_name: userName,
+        });
+        
+        const newComment: Comment = {
+          id: comment.id,
+          text: comment.text,
+          userId: comment.user_id,
+          userName: comment.user_name,
+          timestamp: comment.created_at,
+        };
+        
+        setCustomers(prev => prev.map(customer => 
+          customer.id === customerId 
+            ? { ...customer, comments: [newComment, ...customer.comments] }
+            : customer
+        ));
+      } else {
+        // Use mock data
+        const customerIndex = customersDataRef.current.findIndex(c => c.id === customerId);
+        if (customerIndex === -1) throw new Error('Customer not found');
+        
+        const newComment: Comment = {
+          id: Date.now().toString(),
+          text,
+          userId,
+          userName,
+          timestamp: new Date().toISOString(),
+        };
+        
+        customersDataRef.current[customerIndex].comments.unshift(newComment);
+        customersDataRef.current[customerIndex].updatedAt = new Date().toISOString();
+        setCustomers([...customersDataRef.current]);
+      }
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      throw error;
+    }
   };
 
   return {
@@ -88,26 +197,88 @@ export const useCustomer = (id: string) => {
   return customers.find(customer => customer.id === id);
 };
 
-export const useCustomerSearch = () => {
-  const { customers } = useCustomers();
+export const useCustomerSearch = (customers: Customer[]) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [destinationFilter, setDestinationFilter] = useState<string>('all');
   const [packageTypeFilter, setPackageTypeFilter] = useState<string>('all');
   const [leadTypeFilter, setLeadTypeFilter] = useState<string>('all');
+  const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>(customers);
+  const [isSearching, setIsSearching] = useState(false);
 
-  const filteredCustomers = customers.filter(customer => {
-    const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         customer.phone.includes(searchTerm) ||
-                         customer.destination.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || customer.status === statusFilter;
-    const matchesDestination = destinationFilter === 'all' || customer.destination === destinationFilter;
-    const matchesPackageType = packageTypeFilter === 'all' || customer.packageType === packageTypeFilter;
-    const matchesLeadType = leadTypeFilter === 'all' || customer.leadType === leadTypeFilter;
+  useEffect(() => {
+    const performSearch = async () => {
+      // If no filters are applied, use the main customers list (which includes comments)
+      const hasFilters = searchTerm !== '' || 
+        statusFilter !== 'all' || 
+        destinationFilter !== 'all' || 
+        packageTypeFilter !== 'all' || 
+        leadTypeFilter !== 'all';
 
-    return matchesSearch && matchesStatus && matchesDestination && matchesPackageType && matchesLeadType;
-  });
+      if (!hasFilters) {
+        setFilteredCustomers(customers);
+        return;
+      }
+
+      if (supabase) {
+        // Use Supabase search only when filters are applied
+        setIsSearching(true);
+        try {
+          const results = await customerService.search({
+            searchTerm: searchTerm || undefined,
+            status: statusFilter !== 'all' ? statusFilter : undefined,
+            destination: destinationFilter !== 'all' ? destinationFilter : undefined,
+            packageType: packageTypeFilter !== 'all' ? packageTypeFilter : undefined,
+            leadType: leadTypeFilter !== 'all' ? leadTypeFilter : undefined,
+          });
+          
+          const frontendResults = results.map(convertDbCustomerToFrontend);
+          
+          // Load comments for each search result
+          const resultsWithComments = await Promise.all(
+            frontendResults.map(async (customer) => {
+              const comments = await commentService.getByCustomerId(customer.id);
+              return {
+                ...customer,
+                comments: comments.map(comment => ({
+                  id: comment.id,
+                  text: comment.text,
+                  userId: comment.user_id,
+                  userName: comment.user_name,
+                  timestamp: comment.created_at,
+                }))
+              };
+            })
+          );
+          
+          setFilteredCustomers(resultsWithComments);
+        } catch (error) {
+          console.error('Search error:', error);
+          setFilteredCustomers(customers);
+        } finally {
+          setIsSearching(false);
+        }
+      } else {
+        // Use local filtering
+        const filtered = customers.filter(customer => {
+          const matchesSearch = searchTerm === '' ||
+            customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            customer.phone.includes(searchTerm) ||
+            customer.destination.toLowerCase().includes(searchTerm.toLowerCase());
+
+          const matchesStatus = statusFilter === 'all' || customer.status === statusFilter;
+          const matchesDestination = destinationFilter === 'all' || customer.destination === destinationFilter;
+          const matchesPackageType = packageTypeFilter === 'all' || customer.packageType === packageTypeFilter;
+          const matchesLeadType = leadTypeFilter === 'all' || customer.leadType === leadTypeFilter;
+
+          return matchesSearch && matchesStatus && matchesDestination && matchesPackageType && matchesLeadType;
+        });
+        setFilteredCustomers(filtered);
+      }
+    };
+
+    performSearch();
+  }, [customers, searchTerm, statusFilter, destinationFilter, packageTypeFilter, leadTypeFilter]);
 
   return {
     customers: filteredCustomers,
@@ -121,5 +292,6 @@ export const useCustomerSearch = () => {
     setPackageTypeFilter,
     leadTypeFilter,
     setLeadTypeFilter,
+    isSearching,
   };
 };

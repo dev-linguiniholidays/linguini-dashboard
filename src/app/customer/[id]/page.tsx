@@ -10,7 +10,8 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { CustomerDetails } from '@/components/CustomerDetails';
 import { useCustomers } from '@/hooks/useCustomers';
-import { getCurrentUser } from '@/lib/roleUtils';
+import { useAuth } from '@/contexts/AuthContext';
+import { displayValue } from '@/lib/displayUtils';
 
 const statusColors = {
   fresh: 'bg-blue-100 text-blue-800',
@@ -42,6 +43,7 @@ export default function CustomerDetailPage() {
   const customerId = params.id as string;
   const customer = useCustomer(customerId);
   const { updateCustomer, addComment } = useCustomers();
+  const { user } = useAuth();
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   if (!customer) {
@@ -114,8 +116,13 @@ export default function CustomerDetailPage() {
   };
 
   const handleAddComment = (customerId: string, text: string) => {
-    const currentUser = getCurrentUser();
-    addComment({ customerId, text, userId: currentUser.id, userName: currentUser.name });
+    if (!user) return;
+    addComment({ 
+      customerId, 
+      text, 
+      userId: user.id, 
+      userName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User' 
+    });
   };
 
   return (
@@ -131,7 +138,7 @@ export default function CustomerDetailPage() {
           </Link>
           <div>
             <h1 className="text-3xl font-bold text-gray-900">{customer.name}</h1>
-            <p className="text-gray-600">{customer.destination}</p>
+            <p className="text-gray-600">{displayValue(customer.destination)}</p>
           </div>
         </div>
         <div className="flex space-x-2">
@@ -149,7 +156,7 @@ export default function CustomerDetailPage() {
             <h3 className="text-sm font-medium text-gray-500 mb-2">Contact Information</h3>
             <div className="space-y-2">
               <p className="text-sm"><span className="font-medium">Phone:</span> {customer.phone}</p>
-              <p className="text-sm"><span className="font-medium">Destination:</span> {customer.destination}</p>
+              <p className="text-sm"><span className="font-medium">Destination:</span> {displayValue(customer.destination)}</p>
             </div>
           </div>
 
@@ -158,7 +165,7 @@ export default function CustomerDetailPage() {
             <div className="space-y-2">
               <p className="text-sm"><span className="font-medium">Start Date:</span> {formatDate(customer.travelStartDate)}</p>
               <p className="text-sm"><span className="font-medium">End Date:</span> {formatDate(customer.travelEndDate)}</p>
-              <p className="text-sm"><span className="font-medium">Passengers:</span> {customer.numberOfPax}</p>
+              <p className="text-sm"><span className="font-medium">Passengers:</span> {displayValue(customer.numberOfPax)}</p>
             </div>
           </div>
 
@@ -194,12 +201,10 @@ export default function CustomerDetailPage() {
           </div>
         </div>
 
-        {customer.description && (
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <h3 className="text-sm font-medium text-gray-500 mb-2">Description</h3>
-            <p className="text-sm text-gray-700">{customer.description}</p>
-          </div>
-        )}
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <h3 className="text-sm font-medium text-gray-500 mb-2">Description</h3>
+          <p className="text-sm text-gray-700">{displayValue(customer.description, 'No description provided')}</p>
+        </div>
       </div>
 
       {/* Comments Section */}

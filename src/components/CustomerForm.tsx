@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 
 interface CustomerFormProps {
   customer?: Customer;
@@ -28,7 +29,7 @@ export const CustomerForm = ({
 }: CustomerFormProps) => {
   const [formData, setFormData] = useState({
     name: '',
-    phone: '',
+    phone: '+91 ',
     destination: '',
     status: 'fresh' as Customer['status'],
     description: '',
@@ -60,7 +61,7 @@ export const CustomerForm = ({
     } else {
       setFormData({
         name: '',
-        phone: '',
+        phone: '+91 ',
         destination: '',
         status: 'fresh',
         description: '',
@@ -84,22 +85,17 @@ export const CustomerForm = ({
 
     if (!formData.phone.trim()) {
       newErrors.phone = 'Phone is required';
-    } else if (!/^[\+]?[1-9][\d]{0,15}$/.test(formData.phone.replace(/[\s\-\(\)]/g, ''))) {
-      newErrors.phone = 'Please enter a valid phone number';
+    } else {
+      // Remove spaces and check for Indian phone number format
+      const cleanPhone = formData.phone.replace(/\s/g, '');
+      const indianPhoneRegex = /^(\+91|91)?[6-9]\d{9}$/;
+      
+      if (!indianPhoneRegex.test(cleanPhone)) {
+        newErrors.phone = 'Please enter a valid phone number';
+      }
     }
 
-    if (!formData.destination.trim()) {
-      newErrors.destination = 'Destination is required';
-    }
-
-    if (!formData.travelStartDate) {
-      newErrors.travelStartDate = 'Travel start date is required';
-    }
-
-    if (!formData.travelEndDate) {
-      newErrors.travelEndDate = 'Travel end date is required';
-    }
-
+    // Only validate date logic if both dates are provided
     if (formData.travelStartDate && formData.travelEndDate) {
       const startDate = new Date(formData.travelStartDate);
       const endDate = new Date(formData.travelEndDate);
@@ -116,7 +112,7 @@ export const CustomerForm = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -128,10 +124,29 @@ export const CustomerForm = ({
       leadCreationDate: new Date(formData.leadCreationDate).toISOString(),
     };
 
-    if (customer && onUpdate) {
-      onUpdate(customer.id, customerData);
-    } else {
-      onSave(customerData);
+    try {
+      if (customer && onUpdate) {
+        await onUpdate(customer.id, customerData);
+        toast.success('Customer updated successfully!', {
+          style: {
+            backgroundColor: '#10b981',
+            color: 'white',
+            border: 'none',
+          },
+        });
+      } else {
+        await onSave(customerData);
+        toast.success('Customer added successfully!', {
+          style: {
+            backgroundColor: '#10b981',
+            color: 'white',
+            border: 'none',
+          },
+        });
+      }
+      onClose();
+    } catch (error) {
+      toast.error(customer ? 'Failed to update customer' : 'Failed to add customer');
     }
   };
 
@@ -139,6 +154,37 @@ export const CustomerForm = ({
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const handlePhoneChange = (value: string) => {
+    // Remove all non-digit characters except +
+    let cleanValue = value.replace(/[^\d+]/g, '');
+    
+    // If it doesn't start with +91, add it
+    if (!cleanValue.startsWith('+91')) {
+      if (cleanValue.startsWith('91')) {
+        cleanValue = '+' + cleanValue;
+      } else if (cleanValue.startsWith('+')) {
+        cleanValue = '+91' + cleanValue.substring(1);
+      } else {
+        cleanValue = '+91' + cleanValue;
+      }
+    }
+    
+    // Limit to 10 digits after +91
+    if (cleanValue.length > 13) { // +91 + 10 digits
+      cleanValue = cleanValue.substring(0, 13);
+    }
+    
+    // Add space after +91 for better readability
+    if (cleanValue.length > 3) {
+      cleanValue = cleanValue.substring(0, 3) + ' ' + cleanValue.substring(3);
+    }
+    
+    setFormData(prev => ({ ...prev, phone: cleanValue }));
+    if (errors.phone) {
+      setErrors(prev => ({ ...prev, phone: '' }));
     }
   };
 
@@ -169,14 +215,15 @@ export const CustomerForm = ({
               <Input
                 id="phone"
                 value={formData.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
+                onChange={(e) => handlePhoneChange(e.target.value)}
+                placeholder="+91 9876543210"
                 className={errors.phone ? 'border-red-500' : ''}
               />
               {errors.phone && <p className="text-sm text-red-500">{errors.phone}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="destination">Destination *</Label>
+              <Label htmlFor="destination">Destination</Label>
               <Input
                 id="destination"
                 value={formData.destination}
@@ -205,7 +252,7 @@ export const CustomerForm = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="travelStartDate">Travel Start Date *</Label>
+              <Label htmlFor="travelStartDate">Travel Start Date</Label>
               <Input
                 id="travelStartDate"
                 type="date"
@@ -217,7 +264,7 @@ export const CustomerForm = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="travelEndDate">Travel End Date *</Label>
+              <Label htmlFor="travelEndDate">Travel End Date</Label>
               <Input
                 id="travelEndDate"
                 type="date"
@@ -229,7 +276,7 @@ export const CustomerForm = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="numberOfPax">Number of Passengers *</Label>
+              <Label htmlFor="numberOfPax">Number of Passengers</Label>
               <Input
                 id="numberOfPax"
                 type="number"

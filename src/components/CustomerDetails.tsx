@@ -10,6 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Edit, Save, X, MessageSquare, Send } from 'lucide-react';
+import { displayValue, formatDate, formatDateTime } from '@/lib/displayUtils';
+import { toast } from 'sonner';
 
 interface CustomerDetailsProps {
   customer: Customer;
@@ -69,6 +71,34 @@ export const CustomerDetails = ({
   });
   const [newComment, setNewComment] = useState('');
 
+  const handlePhoneChange = (value: string) => {
+    // Remove all non-digit characters except +
+    let cleanValue = value.replace(/[^\d+]/g, '');
+    
+    // If it doesn't start with +91, add it
+    if (!cleanValue.startsWith('+91')) {
+      if (cleanValue.startsWith('91')) {
+        cleanValue = '+' + cleanValue;
+      } else if (cleanValue.startsWith('+')) {
+        cleanValue = '+91' + cleanValue.substring(1);
+      } else {
+        cleanValue = '+91' + cleanValue;
+      }
+    }
+    
+    // Limit to 10 digits after +91
+    if (cleanValue.length > 13) { // +91 + 10 digits
+      cleanValue = cleanValue.substring(0, 13);
+    }
+    
+    // Add space after +91 for better readability
+    if (cleanValue.length > 3) {
+      cleanValue = cleanValue.substring(0, 3) + ' ' + cleanValue.substring(3);
+    }
+    
+    setFormData(prev => ({ ...prev, phone: cleanValue }));
+  };
+
   useEffect(() => {
     if (customer) {
       setFormData({
@@ -87,38 +117,47 @@ export const CustomerDetails = ({
     }
   }, [customer]);
 
-  const handleSave = () => {
-    onUpdate(customer.id, {
-      ...formData,
-      leadCreationDate: new Date(formData.leadCreationDate).toISOString(),
-    });
-    setIsEditing(false);
-  };
-
-  const handleAddComment = () => {
-    if (newComment.trim()) {
-      onAddComment(customer.id, newComment.trim());
-      setNewComment('');
+  const handleSave = async () => {
+    try {
+      await onUpdate(customer.id, {
+        ...formData,
+        leadCreationDate: new Date(formData.leadCreationDate).toISOString(),
+      });
+      setIsEditing(false);
+      toast.success('Customer updated successfully!', {
+        style: {
+          backgroundColor: '#10b981',
+          color: 'white',
+          border: 'none',
+        },
+      });
+    } catch (error) {
+      toast.error('Failed to update customer');
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+  const handleAddComment = async () => {
+    if (newComment.trim()) {
+      try {
+        await onAddComment(customer.id, newComment.trim());
+        setNewComment('');
+        toast.success('Comment added successfully!', {
+          style: {
+            backgroundColor: '#10b981',
+            color: 'white',
+            border: 'none',
+          },
+        });
+        // Auto-close the modal after adding comment
+        setTimeout(() => {
+          onClose();
+        }, 1000);
+      } catch (error) {
+        toast.error('Failed to add comment');
+      }
+    }
   };
 
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
@@ -201,7 +240,8 @@ export const CustomerDetails = ({
               {isEditing ? (
                 <Input
                   value={formData.phone}
-                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                  onChange={(e) => handlePhoneChange(e.target.value)}
+                  placeholder="+91 9876543210"
                 />
               ) : (
                 <p className="text-sm font-medium">{customer.phone}</p>
@@ -216,7 +256,7 @@ export const CustomerDetails = ({
                   onChange={(e) => setFormData(prev => ({ ...prev, destination: e.target.value }))}
                 />
               ) : (
-                <p className="text-sm font-medium">{customer.destination}</p>
+                <p className="text-sm font-medium">{displayValue(customer.destination)}</p>
               )}
             </div>
 
@@ -280,7 +320,7 @@ export const CustomerDetails = ({
                   onChange={(e) => setFormData(prev => ({ ...prev, numberOfPax: parseInt(e.target.value) || 1 }))}
                 />
               ) : (
-                <p className="text-sm font-medium">{customer.numberOfPax}</p>
+                <p className="text-sm font-medium">{displayValue(customer.numberOfPax)}</p>
               )}
             </div>
 
@@ -351,7 +391,7 @@ export const CustomerDetails = ({
                 rows={3}
               />
             ) : (
-              <p className="text-sm text-gray-600">{customer.description || 'No description provided'}</p>
+              <p className="text-sm text-gray-600">{displayValue(customer.description, 'No description provided')}</p>
             )}
           </div>
 
