@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Customer, Comment } from '@/lib/types';
 import { customerService, commentService, convertDbCustomerToFrontend, convertFrontendCustomerToDb, convertPartialFrontendCustomerToDb } from '@/lib/database';
 import { supabase } from '@/lib/supabase';
@@ -88,8 +88,7 @@ export const useCustomers = () => {
           updatedAt: new Date().toISOString(),
           comments: [],
         };
-        customersDataRef.current.push(customer);
-        setCustomers([...customersDataRef.current]);
+        setCustomers(prev => [...prev, customer]);
       }
     } catch (error) {
       console.error('Error adding customer:', error);
@@ -107,15 +106,11 @@ export const useCustomers = () => {
         setCustomers(prev => prev.map(c => c.id === id ? frontendCustomer : c));
       } else {
         // Use database data
-        const index = customersDataRef.current.findIndex(c => c.id === id);
-        if (index === -1) throw new Error('Customer not found');
-        
-        customersDataRef.current[index] = {
-          ...customersDataRef.current[index],
-          ...updates,
-          updatedAt: new Date().toISOString(),
-        };
-        setCustomers([...customersDataRef.current]);
+        setCustomers(prev => prev.map(c => 
+          c.id === id 
+            ? { ...c, ...updates, updatedAt: new Date().toISOString() }
+            : c
+        ));
       }
     } catch (error) {
       console.error('Error updating customer:', error);
@@ -131,11 +126,7 @@ export const useCustomers = () => {
         setCustomers(prev => prev.filter(c => c.id !== id));
       } else {
         // Use database data
-        const index = customersDataRef.current.findIndex(c => c.id === id);
-        if (index === -1) throw new Error('Customer not found');
-        
-        customersDataRef.current.splice(index, 1);
-        setCustomers([...customersDataRef.current]);
+        setCustomers(prev => prev.filter(c => c.id !== id));
       }
     } catch (error) {
       console.error('Error deleting customer:', error);
@@ -180,9 +171,6 @@ export const useCustomers = () => {
         ));
       } else {
         // Use database data
-        const customerIndex = customersDataRef.current.findIndex(c => c.id === customerId);
-        if (customerIndex === -1) throw new Error('Customer not found');
-        
         const newComment: Comment = {
           id: Date.now().toString(),
           text,
@@ -191,9 +179,15 @@ export const useCustomers = () => {
           timestamp: new Date().toISOString(),
         };
         
-        customersDataRef.current[customerIndex].comments.unshift(newComment);
-        customersDataRef.current[customerIndex].updatedAt = new Date().toISOString();
-        setCustomers([...customersDataRef.current]);
+        setCustomers(prev => prev.map(c => 
+          c.id === customerId 
+            ? { 
+                ...c, 
+                comments: [newComment, ...c.comments],
+                updatedAt: new Date().toISOString()
+              }
+            : c
+        ));
       }
     } catch (error) {
       console.error('Error adding comment:', error);
