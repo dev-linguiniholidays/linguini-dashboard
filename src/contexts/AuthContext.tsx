@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase, signIn as supabaseSignIn, signUp as supabaseSignUp, signOut as supabaseSignOut } from '@/lib/supabase';
 import { customerService } from '@/lib/database';
-import { setStoredRole } from '@/lib/roleUtils';
+import { setStoredRole, setStoredUserId } from '@/lib/roleUtils';
 
 interface AuthContextType {
   user: User | null;
@@ -59,7 +59,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           const user = JSON.parse(storedUser);
           setUser(user);
           // Set role based on stored user email
-          if (user.email === 'admin@linguiniholidays.com') {
+          if (user.email === 'superadmin@linguiniholidays.com') {
+            setStoredRole('superadmin');
+            localStorage.setItem('user-name', 'Super Admin');
+          } else if (user.email === 'admin@linguiniholidays.com') {
             setStoredRole('admin');
             localStorage.setItem('user-name', 'Admin User');
           } else {
@@ -70,7 +73,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           // Set default mock user for development
           const defaultUser = {
             id: 'mock-user-id',
-            email: 'admin@linguiniholidays.com',
+            email: 'superadmin@linguiniholidays.com',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
             aud: 'authenticated',
@@ -99,9 +102,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           };
           localStorage.setItem('mock-user', JSON.stringify(defaultUser));
           setUser(defaultUser);
-          // Set admin role for default user
-          setStoredRole('admin');
-          localStorage.setItem('user-name', 'Admin User');
+          // Set user role for testing (change to 'superadmin' for admin access)
+          setStoredRole('user');
+          setStoredUserId('Sales');
+          localStorage.setItem('user-name', 'Sales');
         }
       }
       setLoading(false);

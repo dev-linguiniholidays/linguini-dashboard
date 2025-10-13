@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Customer } from '@/lib/mockData';
+import { Customer } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Edit, Save, X, MessageSquare, Send, Loader2 } from 'lucide-react';
 import { displayValue, formatDate, formatDateTime } from '@/lib/displayUtils';
-import { isAdmin } from '@/lib/roleUtils';
+import { canEditCustomer, isSuperAdmin, isAdmin } from '@/lib/roleUtils';
 import { toast } from 'sonner';
 
 interface CustomerDetailsProps {
@@ -22,6 +22,7 @@ interface CustomerDetailsProps {
   onAddComment: (customerId: string, text: string) => void;
   isLoading?: boolean;
   assigneeOptions?: string[];
+  commentMode?: boolean; // When true, hide edit button (opened from comment button)
 }
 
 const statusColors = {
@@ -60,13 +61,27 @@ const serviceColors = {
   'hotel': 'bg-indigo-100 text-indigo-800 hover:opacity-70 transition-opacity',
 };
 
-const assigneeColors = {
-  'none': 'bg-gray-100 text-gray-800 hover:opacity-70 transition-opacity',
-  'admin': 'bg-red-100 text-red-800 hover:opacity-70 transition-opacity',
-  'user1': 'bg-blue-100 text-blue-800 hover:opacity-70 transition-opacity',
-  'user2': 'bg-green-100 text-green-800 hover:opacity-70 transition-opacity',
-  'user3': 'bg-yellow-100 text-yellow-800 hover:opacity-70 transition-opacity',
-  'user4': 'bg-purple-100 text-purple-800 hover:opacity-70 transition-opacity',
+const getAssigneeColor = (assignee: string): string => {
+  const colors = [
+    'bg-gray-100 text-gray-800',
+    'bg-red-100 text-red-800',
+    'bg-blue-100 text-blue-800',
+    'bg-green-100 text-green-800',
+    'bg-yellow-100 text-yellow-800',
+    'bg-purple-100 text-purple-800',
+    'bg-pink-100 text-pink-800',
+    'bg-indigo-100 text-indigo-800',
+    'bg-orange-100 text-orange-800',
+    'bg-teal-100 text-teal-800',
+  ];
+  
+  // Use a simple hash to consistently assign colors
+  let hash = 0;
+  for (let i = 0; i < assignee.length; i++) {
+    hash = ((hash << 5) - hash + assignee.charCodeAt(i)) & 0xffffffff;
+  }
+  const colorIndex = Math.abs(hash) % colors.length;
+  return `${colors[colorIndex]} hover:opacity-70 transition-opacity`;
 };
 
 export const CustomerDetails = ({
@@ -77,6 +92,7 @@ export const CustomerDetails = ({
   onAddComment,
   isLoading = false,
   assigneeOptions = [],
+  commentMode = false,
 }: CustomerDetailsProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -258,10 +274,12 @@ export const CustomerDetails = ({
                   </Button>
                 </>
               ) : (
-                <Button onClick={() => setIsEditing(true)} size="sm">
-                  <Edit className="h-4 w-4 mr-1" />
-                  Edit
-                </Button>
+                !commentMode && canEditCustomer(customer) && (
+                  <Button onClick={() => setIsEditing(true)} size="sm">
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+                )
               )}
             </div>
           </div>
@@ -440,12 +458,12 @@ export const CustomerDetails = ({
             </div>
 
             <div className="space-y-2">
-              <Label>Assignee</Label>
-              {isEditing && isAdmin() ? (
+              <Label>Travel Advisor</Label>
+              {isEditing && (isSuperAdmin() || isAdmin()) ? (
                 assigneeOptions.length === 0 ? (
                   <div className="flex items-center space-x-2 text-sm text-gray-500">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Loading assignee options...</span>
+                    <span>Loading travel advisor options...</span>
                   </div>
                 ) : (
                   <Select value={formData.assignee} onValueChange={(value) => setFormData(prev => ({ ...prev, assignee: value as Customer['assignee'] }))}>
@@ -462,7 +480,7 @@ export const CustomerDetails = ({
                   </Select>
                 )
               ) : (
-                <Badge className={assigneeColors[customer.assignee]}>
+                <Badge className={getAssigneeColor(customer.assignee)}>
                   {getAssigneeLabel(customer.assignee)}
                 </Badge>
               )}
@@ -504,18 +522,20 @@ export const CustomerDetails = ({
             </div>
 
             {/* Add Comment */}
-            <div className="flex gap-2">
-              <Textarea
-                placeholder="Add a comment..."
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                rows={2}
-                className="flex-1"
-              />
-              <Button onClick={handleAddComment} disabled={!newComment.trim()}>
-                <Send className="h-4 w-4" />
-              </Button>
-            </div>
+            {canEditCustomer(customer) && (
+              <div className="flex gap-2">
+                <Textarea
+                  placeholder="Add a comment..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  rows={2}
+                  className="flex-1"
+                />
+                <Button onClick={handleAddComment} disabled={!newComment.trim()}>
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
 
             {/* Comments List */}
             <div className="space-y-3 max-h-60 overflow-y-auto">

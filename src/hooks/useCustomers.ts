@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
-import { Customer, Comment, mockCustomers } from '@/lib/mockData';
+import { Customer, Comment } from '@/lib/types';
 import { customerService, commentService, convertDbCustomerToFrontend, convertFrontendCustomerToDb, convertPartialFrontendCustomerToDb } from '@/lib/database';
 import { supabase } from '@/lib/supabase';
+import { canEditCustomer } from '@/lib/roleUtils';
 
 export const useCustomers = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [destinationOptions, setDestinationOptions] = useState<string[]>([]);
   const [assigneeOptions, setAssigneeOptions] = useState<string[]>([]);
-  const customersDataRef = useRef<Customer[]>([...mockCustomers]);
 
   useEffect(() => {
     const loadCustomers = async () => {
@@ -53,20 +53,17 @@ export const useCustomers = () => {
             setAssigneeOptions([]);
           }
         } else {
-          // Use mock data with a small delay to show loading
-          await new Promise(resolve => setTimeout(resolve, 500));
-          setCustomers(customersDataRef.current);
-          
-          // Set mock filter options
-          setDestinationOptions(['Mumbai', 'Delhi', 'Goa', 'Kerala', 'Rajasthan', 'Himachal Pradesh', 'Kashmir', 'Ladakh', 'Punjab', 'Gujarat', 'Karnataka', 'Tamil Nadu', 'West Bengal', 'Uttar Pradesh', 'Madhya Pradesh', 'Maharashtra', 'Andhra Pradesh', 'Telangana', 'Odisha', 'Bihar', 'Jharkhand', 'Chhattisgarh', 'Assam', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Tripura', 'Sikkim', 'Arunachal Pradesh', 'Uttarakhand', 'Haryana', 'Chandigarh', 'Puducherry', 'Daman and Diu', 'Dadra and Nagar Haveli', 'Lakshadweep', 'Andaman and Nicobar Islands']);
-          setAssigneeOptions(['none']); // Only 'none' for mock data
+          // No Supabase connection - show empty state
+          setCustomers([]);
+          setDestinationOptions([]);
+          setAssigneeOptions([]);
         }
       } catch (error) {
         console.error('Error loading customers:', error);
-        // Fallback to mock data
-        setCustomers(customersDataRef.current);
-        setDestinationOptions(['Mumbai', 'Delhi', 'Goa', 'Kerala', 'Rajasthan', 'Himachal Pradesh', 'Kashmir', 'Ladakh', 'Punjab', 'Gujarat', 'Karnataka', 'Tamil Nadu', 'West Bengal', 'Uttar Pradesh', 'Madhya Pradesh', 'Maharashtra', 'Andhra Pradesh', 'Telangana', 'Odisha', 'Bihar', 'Jharkhand', 'Chhattisgarh', 'Assam', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Tripura', 'Sikkim', 'Arunachal Pradesh', 'Uttarakhand', 'Haryana', 'Chandigarh', 'Puducherry', 'Daman and Diu', 'Dadra and Nagar Haveli', 'Lakshadweep', 'Andaman and Nicobar Islands']);
-        setAssigneeOptions(['none']); // Only 'none' for fallback
+        // Show empty state on error
+        setCustomers([]);
+        setDestinationOptions([]);
+        setAssigneeOptions([]);
       } finally {
         setIsLoading(false);
       }
@@ -84,7 +81,7 @@ export const useCustomers = () => {
         const frontendCustomer = convertDbCustomerToFrontend(createdCustomer);
         setCustomers(prev => [frontendCustomer, ...prev]);
       } else {
-        // Use mock data
+        // Use database data
         const customer: Customer = {
           ...newCustomer,
           id: Date.now().toString(),
@@ -109,7 +106,7 @@ export const useCustomers = () => {
         const frontendCustomer = convertDbCustomerToFrontend(updatedCustomer);
         setCustomers(prev => prev.map(c => c.id === id ? frontendCustomer : c));
       } else {
-        // Use mock data
+        // Use database data
         const index = customersDataRef.current.findIndex(c => c.id === id);
         if (index === -1) throw new Error('Customer not found');
         
@@ -133,7 +130,7 @@ export const useCustomers = () => {
         await customerService.delete(id);
         setCustomers(prev => prev.filter(c => c.id !== id));
       } else {
-        // Use mock data
+        // Use database data
         const index = customersDataRef.current.findIndex(c => c.id === id);
         if (index === -1) throw new Error('Customer not found');
         
@@ -152,6 +149,12 @@ export const useCustomers = () => {
     userId: string; 
     userName: string; 
   }) => {
+    // Check if user has edit permission for this customer
+    const customer = customers.find(c => c.id === customerId);
+    if (!customer || !canEditCustomer(customer)) {
+      throw new Error('You do not have permission to add comments to this record');
+    }
+    
     try {
       if (supabase) {
         // Use Supabase database
@@ -176,7 +179,7 @@ export const useCustomers = () => {
             : customer
         ));
       } else {
-        // Use mock data
+        // Use database data
         const customerIndex = customersDataRef.current.findIndex(c => c.id === customerId);
         if (customerIndex === -1) throw new Error('Customer not found');
         

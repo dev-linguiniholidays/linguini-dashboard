@@ -27,7 +27,7 @@ export interface Database {
           package_type: 'private' | 'group'
           lead_type: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other'
           service: 'tour-package' | 'flight' | 'train' | 'visa' | 'group-departure' | 'bus' | 'cab' | 'hotel'
-          assignee: 'none' | 'admin' | 'user1' | 'user2' | 'user3' | 'user4'
+          assignee: string
           created_at: string
           updated_at: string
         }
@@ -45,7 +45,7 @@ export interface Database {
           package_type?: 'private' | 'group'
           lead_type?: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other'
           service?: 'tour-package' | 'flight' | 'train' | 'visa' | 'group-departure' | 'bus' | 'cab' | 'hotel'
-          assignee?: 'none' | 'admin' | 'user1' | 'user2' | 'user3' | 'user4'
+          assignee?: string
           created_at?: string
           updated_at?: string
         }
@@ -63,7 +63,7 @@ export interface Database {
           package_type?: 'private' | 'group'
           lead_type?: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other'
           service?: 'tour-package' | 'flight' | 'train' | 'visa' | 'group-departure' | 'bus' | 'cab' | 'hotel'
-          assignee?: 'none' | 'admin' | 'user1' | 'user2' | 'user3' | 'user4'
+          assignee?: string
           created_at?: string
           updated_at?: string
         }

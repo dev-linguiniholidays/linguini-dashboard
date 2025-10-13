@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Customer } from '@/lib/mockData';
+import { Customer } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Search, Plus, Edit, Trash2, MessageSquare, Eye } from 'lucide-react';
 import { RoleGuard } from './RoleGuard';
 import { displayValue } from '@/lib/displayUtils';
+import { canEditCustomer } from '@/lib/roleUtils';
 import { toast } from 'sonner';
 
 interface CustomerTableProps {
@@ -73,13 +74,27 @@ const serviceColors = {
   'hotel': 'bg-indigo-100 text-indigo-800 hover:opacity-70 transition-opacity',
 };
 
-const assigneeColors = {
-  'none': 'bg-gray-100 text-gray-800 hover:opacity-70 transition-opacity',
-  'admin': 'bg-red-100 text-red-800 hover:opacity-70 transition-opacity',
-  'user1': 'bg-blue-100 text-blue-800 hover:opacity-70 transition-opacity',
-  'user2': 'bg-green-100 text-green-800 hover:opacity-70 transition-opacity',
-  'user3': 'bg-yellow-100 text-yellow-800 hover:opacity-70 transition-opacity',
-  'user4': 'bg-purple-100 text-purple-800 hover:opacity-70 transition-opacity',
+const getAssigneeColor = (assignee: string): string => {
+  const colors = [
+    'bg-gray-100 text-gray-800',
+    'bg-red-100 text-red-800',
+    'bg-blue-100 text-blue-800',
+    'bg-green-100 text-green-800',
+    'bg-yellow-100 text-yellow-800',
+    'bg-purple-100 text-purple-800',
+    'bg-pink-100 text-pink-800',
+    'bg-indigo-100 text-indigo-800',
+    'bg-orange-100 text-orange-800',
+    'bg-teal-100 text-teal-800',
+  ];
+  
+  // Use a simple hash to consistently assign colors
+  let hash = 0;
+  for (let i = 0; i < assignee.length; i++) {
+    hash = ((hash << 5) - hash + assignee.charCodeAt(i)) & 0xffffffff;
+  }
+  const colorIndex = Math.abs(hash) % colors.length;
+  return `${colors[colorIndex]} hover:opacity-70 transition-opacity`;
 };
 
 export const CustomerTable = ({
@@ -129,8 +144,21 @@ export const CustomerTable = ({
   const endIndex = startIndex + itemsPerPage;
   const currentCustomers = customers.slice(startIndex, endIndex);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
+  const formatDate = (dateString: string | undefined | null) => {
+    if (!dateString) return 'N/A';
+    
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'N/A';
+      
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch {
+      return 'N/A';
+    }
   };
 
   const getStatusLabel = (status: string) => {
@@ -280,10 +308,10 @@ export const CustomerTable = ({
 
         <Select value={assigneeFilter} onValueChange={onAssigneeFilterChange}>
           <SelectTrigger className="w-full sm:w-40">
-            <SelectValue placeholder="Assignee" />
+            <SelectValue placeholder="Travel Advisor" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Assignees</SelectItem>
+            <SelectItem value="all">All Travel Advisors</SelectItem>
             {assigneeOptions.map((assignee) => (
               <SelectItem key={assignee} value={assignee}>
                 {assignee === 'none' ? 'None' : assignee}
@@ -298,6 +326,8 @@ export const CustomerTable = ({
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Lead Created</TableHead>
+              <TableHead>Travel Advisor</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Phone</TableHead>
               <TableHead>Destination</TableHead>
@@ -308,8 +338,6 @@ export const CustomerTable = ({
               <TableHead>Package</TableHead>
               <TableHead>Lead Type</TableHead>
               <TableHead>Service</TableHead>
-              <TableHead>Assignee</TableHead>
-              <TableHead>Lead Created</TableHead>
               <TableHead>Comments</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -317,6 +345,12 @@ export const CustomerTable = ({
           <TableBody>
             {currentCustomers.map((customer) => (
               <TableRow key={customer.id}>
+                <TableCell>{formatDate(customer.leadCreationDate)}</TableCell>
+                <TableCell>
+                  <Badge className={getAssigneeColor(customer.assignee)}>
+                    {getAssigneeLabel(customer.assignee)}
+                  </Badge>
+                </TableCell>
                 <TableCell className="font-medium">{customer.name}</TableCell>
                 <TableCell>{customer.phone}</TableCell>
                 <TableCell>{displayValue(customer.destination)}</TableCell>
@@ -344,12 +378,6 @@ export const CustomerTable = ({
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <Badge className={assigneeColors[customer.assignee]}>
-                    {getAssigneeLabel(customer.assignee)}
-                  </Badge>
-                </TableCell>
-                <TableCell>{formatDate(customer.leadCreationDate)}</TableCell>
-                <TableCell>
                   <Button
                     variant="outline"
                     size="sm"
@@ -369,14 +397,16 @@ export const CustomerTable = ({
                     >
                       <Eye className="h-3 w-3" />
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onEdit(customer)}
-                    >
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                    <RoleGuard allowedRoles={['admin']}>
+                    {canEditCustomer(customer) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onEdit(customer)}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                    )}
+                    <RoleGuard allowedRoles={['superadmin']}>
                       <Button
                         variant="outline"
                         size="sm"

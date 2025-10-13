@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import { Database } from './supabase';
-import { Customer as FrontendCustomer } from './mockData';
+import { Customer as FrontendCustomer } from './types';
 
 type Customer = Database['public']['Tables']['customers']['Row'];
 type CustomerInsert = Database['public']['Tables']['customers']['Insert'];
@@ -171,7 +171,7 @@ export const customerService = {
     return uniqueDestinations.sort();
   },
 
-  // Get unique assignee names from users table
+  // Get unique travel advisor names from users table
   async getUniqueAssignees(): Promise<string[]> {
     if (!supabase) {
       return [];
@@ -183,7 +183,7 @@ export const customerService = {
       .not('name', 'is', null);
 
     if (error) {
-      console.error('Error fetching assignees:', error);
+      console.error('Error fetching travel advisors:', error);
       return [];
     }
 

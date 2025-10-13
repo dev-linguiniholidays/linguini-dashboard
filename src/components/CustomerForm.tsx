@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Customer } from '@/lib/mockData';
+import { Customer } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,7 +40,7 @@ export const CustomerForm = ({
     travelStartDate: '',
     travelEndDate: '',
     leadCreationDate: new Date().toISOString().split('T')[0],
-    numberOfPax: 1,
+    numberOfPax: 1 as number | string,
     packageType: 'private' as Customer['packageType'],
     leadType: 'calling' as Customer['leadType'],
     service: 'tour-package' as Customer['service'],
@@ -114,7 +114,8 @@ export const CustomerForm = ({
       }
     }
 
-    if (formData.numberOfPax < 1) {
+    const numberOfPax = typeof formData.numberOfPax === 'string' ? parseInt(formData.numberOfPax) : formData.numberOfPax;
+    if (isNaN(numberOfPax) || numberOfPax < 1) {
       newErrors.numberOfPax = 'Number of passengers must be at least 1';
     }
 
@@ -131,6 +132,7 @@ export const CustomerForm = ({
 
     const customerData = {
       ...formData,
+      numberOfPax: typeof formData.numberOfPax === 'string' ? parseInt(formData.numberOfPax) : formData.numberOfPax,
       leadCreationDate: new Date(formData.leadCreationDate).toISOString(),
     };
 
@@ -289,10 +291,27 @@ export const CustomerForm = ({
               <Label htmlFor="numberOfPax">Number of Passengers</Label>
               <Input
                 id="numberOfPax"
-                type="number"
-                min="1"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={formData.numberOfPax}
-                onChange={(e) => handleInputChange('numberOfPax', parseInt(e.target.value) || 1)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === '') {
+                    handleInputChange('numberOfPax', '');
+                  } else {
+                    const numValue = parseInt(value);
+                    if (!isNaN(numValue)) {
+                      handleInputChange('numberOfPax', numValue);
+                    }
+                  }
+                }}
+                onFocus={(e) => {
+                  // Position cursor at the end of the input
+                  const target = e.target as HTMLInputElement;
+                  const length = target.value.length;
+                  target.setSelectionRange(length, length);
+                }}
                 className={errors.numberOfPax ? 'border-red-500' : ''}
               />
               {errors.numberOfPax && <p className="text-sm text-red-500">{errors.numberOfPax}</p>}
@@ -350,11 +369,11 @@ export const CustomerForm = ({
 
             {isAdmin() && (
               <div className="space-y-2">
-                <Label htmlFor="assignee">Assignee</Label>
+                <Label htmlFor="assignee">Travel Advisor</Label>
                 {assigneeOptions.length === 0 ? (
                   <div className="flex items-center space-x-2 text-sm text-gray-500">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Loading assignee options...</span>
+                    <span>Loading travel advisor options...</span>
                   </div>
                 ) : (
                   <Select value={formData.assignee} onValueChange={(value) => handleInputChange('assignee', value)}>

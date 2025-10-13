@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Customer } from '@/lib/mockData';
+import { Customer } from '@/lib/types';
 import { CustomerTable } from '@/components/CustomerTable';
 import { CustomerForm } from '@/components/CustomerForm';
 import { CustomerDetails } from '@/components/CustomerDetails';
@@ -36,6 +36,7 @@ export default function CustomersPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
   const handleAdd = () => {
@@ -55,7 +56,7 @@ export default function CustomersPage() {
 
   const handleViewComments = (customer: Customer) => {
     setSelectedCustomer(customer);
-    setIsDetailsModalOpen(true);
+    setIsCommentModalOpen(true);
   };
 
   const handleSave = async (customerData: Omit<Customer, 'id' | 'updatedAt' | 'comments'>) => {
@@ -189,6 +190,19 @@ export default function CustomersPage() {
           onUpdate={handleUpdate}
           onAddComment={handleAddComment}
           assigneeOptions={searchAssigneeOptions}
+        />
+      )}
+
+      {/* Customer Comments Modal */}
+      {selectedCustomer && (
+        <CustomerDetails
+          customer={selectedCustomer}
+          isOpen={isCommentModalOpen}
+          onClose={() => setIsCommentModalOpen(false)}
+          onUpdate={handleUpdate}
+          onAddComment={handleAddComment}
+          assigneeOptions={searchAssigneeOptions}
+          commentMode={true}
         />
       )}
     </div>
