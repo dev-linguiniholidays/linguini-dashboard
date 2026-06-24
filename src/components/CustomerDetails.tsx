@@ -9,9 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Edit, Save, X, MessageSquare, Send, Loader2 } from 'lucide-react';
+import { Edit, Save, X, MessageSquare, Send, Loader2, Lock, Check } from 'lucide-react';
 import { displayValue, formatDate, formatDateTime } from '@/lib/displayUtils';
-import { canEditCustomer, isSuperAdmin, isAdmin } from '@/lib/roleUtils';
+import { canEditCustomer, isSuperAdmin, isAdmin, canConfirmBooking } from '@/lib/roleUtils';
 import { toast } from 'sonner';
 
 interface CustomerDetailsProps {
@@ -20,6 +20,8 @@ interface CustomerDetailsProps {
   onClose: () => void;
   onUpdate: (id: string, updates: Partial<Customer>) => void;
   onAddComment: (customerId: string, text: string) => void;
+  onLock?: (id: string) => void;
+  onConfirmBooking?: (id: string) => void;
   isLoading?: boolean;
   assigneeOptions?: string[];
   commentMode?: boolean; // When true, hide edit button (opened from comment button)
@@ -33,11 +35,6 @@ const statusColors = {
   dead: 'bg-red-100 text-red-800 hover:opacity-70 transition-opacity',
   future: 'bg-purple-100 text-purple-800 hover:opacity-70 transition-opacity',
   hot: 'bg-orange-100 text-orange-800 hover:opacity-70 transition-opacity',
-};
-
-const packageTypeColors = {
-  private: 'bg-indigo-100 text-indigo-800 hover:opacity-70 transition-opacity',
-  group: 'bg-pink-100 text-pink-800 hover:opacity-70 transition-opacity',
 };
 
 const leadTypeColors = {
@@ -90,6 +87,8 @@ export const CustomerDetails = ({
   onClose,
   onUpdate,
   onAddComment,
+  onLock,
+  onConfirmBooking,
   isLoading = false,
   assigneeOptions = [],
   commentMode = false,
@@ -105,7 +104,6 @@ export const CustomerDetails = ({
     travelEndDate: '',
     leadCreationDate: '',
     numberOfPax: 1,
-    packageType: 'private' as Customer['packageType'],
     leadType: 'calling' as Customer['leadType'],
     service: 'tour-package' as Customer['service'],
     assignee: 'none' as Customer['assignee'],
@@ -152,7 +150,6 @@ export const CustomerDetails = ({
         travelEndDate: customer.travelEndDate,
         leadCreationDate: customer.leadCreationDate.split('T')[0],
         numberOfPax: customer.numberOfPax,
-        packageType: customer.packageType,
         leadType: customer.leadType,
         service: customer.service,
         assignee: customer.assignee,
@@ -196,7 +193,7 @@ export const CustomerDetails = ({
         setTimeout(() => {
           onClose();
         }, 1000);
-      } catch (_error) {
+      } catch {
         toast.error('Failed to add comment');
       }
     }
@@ -216,9 +213,6 @@ export const CustomerDetails = ({
     return labels[status] || status;
   };
 
-  const getPackageTypeLabel = (type: string) => {
-    return type === 'private' ? 'Private' : 'Group';
-  };
 
   const getLeadTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
@@ -274,12 +268,49 @@ export const CustomerDetails = ({
                   </Button>
                 </>
               ) : (
-                !commentMode && canEditCustomer(customer) && (
-                  <Button onClick={() => setIsEditing(true)} size="sm">
-                    <Edit className="h-4 w-4 mr-1" />
-                    Edit
-                  </Button>
-                )
+                <>
+                  {!commentMode && !customer.isLocked && (
+                    <Button
+                      onClick={() => {
+                        if (onLock) onLock(customer.id);
+                        toast.success('Lead punched-in successfully!');
+                        onClose();
+                      }}
+                      className="bg-amber-500 hover:bg-amber-600 text-white"
+                      size="sm"
+                    >
+                      <Lock className="h-4 w-4 mr-1" />
+                      Punch In (Lock)
+                    </Button>
+                  )}
+                  {!commentMode && customer.isLocked && (
+                    canConfirmBooking() ? (
+                      <Button
+                        onClick={() => {
+                          if (onConfirmBooking) onConfirmBooking(customer.id);
+                          toast.success('Lead confirmed and moved to bookings!');
+                          onClose();
+                        }}
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                        size="sm"
+                      >
+                        <Check className="h-4 w-4 mr-1" />
+                        Confirm Booking
+                      </Button>
+                    ) : (
+                      <Badge className="bg-amber-100 text-amber-800 border border-amber-200 py-1.5 px-3">
+                        <Lock className="h-3 w-3 mr-1 inline" />
+                        Punched In (Locked)
+                      </Badge>
+                    )
+                  )}
+                  {!commentMode && canEditCustomer(customer) && (
+                    <Button onClick={() => setIsEditing(true)} size="sm">
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -389,24 +420,6 @@ export const CustomerDetails = ({
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label>Package Type</Label>
-              {isEditing ? (
-                <Select value={formData.packageType} onValueChange={(value) => setFormData(prev => ({ ...prev, packageType: value as Customer['packageType'] }))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="private">Private</SelectItem>
-                    <SelectItem value="group">Group</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Badge className={packageTypeColors[customer.packageType]}>
-                  {getPackageTypeLabel(customer.packageType)}
-                </Badge>
-              )}
-            </div>
 
             <div className="space-y-2">
               <Label>Lead Type</Label>

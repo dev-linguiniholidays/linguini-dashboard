@@ -3,13 +3,14 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, Users, User, X } from 'lucide-react';
+import { Home, Users, User, X, Calendar } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: Home },
-  { name: 'Customers', href: '/customers', icon: Users },
+  { name: 'Customer Leads', href: '/customers', icon: Users },
+  { name: 'Bookings', href: '/bookings', icon: Calendar },
 ];
 
 interface SidebarProps {

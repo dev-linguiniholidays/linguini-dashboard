@@ -16,7 +16,7 @@ interface CustomerFormProps {
   customer?: Customer;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (customer: Omit<Customer, 'id' | 'updatedAt' | 'comments'>) => void;
+  onSave: (customer: Omit<Customer, 'id' | 'updatedAt' | 'comments' | 'isLocked'>) => void;
   onUpdate?: (id: string, updates: Partial<Customer>) => void;
   isLoading?: boolean;
   assigneeOptions?: string[];
@@ -41,7 +41,6 @@ export const CustomerForm = ({
     travelEndDate: '',
     leadCreationDate: new Date().toISOString().split('T')[0],
     numberOfPax: 1 as number | string,
-    packageType: 'private' as Customer['packageType'],
     leadType: 'calling' as Customer['leadType'],
     service: 'tour-package' as Customer['service'],
     assignee: 'none' as Customer['assignee'],
@@ -61,7 +60,6 @@ export const CustomerForm = ({
         travelEndDate: customer.travelEndDate,
         leadCreationDate: customer.leadCreationDate.split('T')[0],
         numberOfPax: customer.numberOfPax,
-        packageType: customer.packageType,
         leadType: customer.leadType,
         service: customer.service,
         assignee: customer.assignee,
@@ -77,7 +75,6 @@ export const CustomerForm = ({
         travelEndDate: '',
         leadCreationDate: new Date().toISOString().split('T')[0],
         numberOfPax: 1,
-        packageType: 'private',
         leadType: 'calling',
         service: 'tour-package',
         assignee: 'none',
@@ -157,7 +154,7 @@ export const CustomerForm = ({
         });
       }
       onClose();
-    } catch (_error) {
+    } catch {
       toast.error(customer ? 'Failed to update customer' : 'Failed to add customer');
     }
   };
@@ -317,18 +314,6 @@ export const CustomerForm = ({
               {errors.numberOfPax && <p className="text-sm text-red-500">{errors.numberOfPax}</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="packageType">Package Type</Label>
-              <Select value={formData.packageType} onValueChange={(value) => handleInputChange('packageType', value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="private">Private</SelectItem>
-                  <SelectItem value="group">Group</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
 
             <div className="space-y-2">
               <Label htmlFor="leadType">Lead Type</Label>

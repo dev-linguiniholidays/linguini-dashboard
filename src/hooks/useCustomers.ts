@@ -72,7 +72,7 @@ export const useCustomers = () => {
     loadCustomers();
   }, []);
 
-  const addCustomer = async (newCustomer: Omit<Customer, 'id' | 'updatedAt' | 'comments'>) => {
+  const addCustomer = async (newCustomer: Omit<Customer, 'id' | 'updatedAt' | 'comments' | 'isLocked'>) => {
     try {
       if (supabase) {
         // Use Supabase database
@@ -87,6 +87,7 @@ export const useCustomers = () => {
           id: Date.now().toString(),
           updatedAt: new Date().toISOString(),
           comments: [],
+          isLocked: false,
         };
         setCustomers(prev => [...prev, customer]);
       }
@@ -130,6 +131,34 @@ export const useCustomers = () => {
       }
     } catch (error) {
       console.error('Error deleting customer:', error);
+      throw error;
+    }
+  };
+
+  const lockCustomer = async (id: string) => {
+    try {
+      if (supabase) {
+        await customerService.update(id, { is_locked: true });
+        setCustomers(prev => prev.map(c => c.id === id ? { ...c, isLocked: true } : c));
+      } else {
+        setCustomers(prev => prev.map(c => c.id === id ? { ...c, isLocked: true } : c));
+      }
+    } catch (error) {
+      console.error('Error locking customer:', error);
+      throw error;
+    }
+  };
+
+  const confirmBooking = async (id: string) => {
+    try {
+      if (supabase) {
+        await customerService.moveToBooking(id);
+        setCustomers(prev => prev.filter(c => c.id !== id));
+      } else {
+        setCustomers(prev => prev.filter(c => c.id !== id));
+      }
+    } catch (error) {
+      console.error('Error confirming booking:', error);
       throw error;
     }
   };
@@ -203,6 +232,8 @@ export const useCustomers = () => {
     updateCustomer,
     deleteCustomer,
     addComment,
+    lockCustomer,
+    confirmBooking,
     isAdding: false,
     isUpdating: false,
     isDeleting: false,
@@ -221,7 +252,6 @@ export const useCustomerSearch = (customers: Customer[], destinationOptions: str
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [destinationFilter, setDestinationFilter] = useState<string>('all');
-  const [packageTypeFilter, setPackageTypeFilter] = useState<string>('all');
   const [leadTypeFilter, setLeadTypeFilter] = useState<string>('all');
   const [serviceFilter, setServiceFilter] = useState<string>('all');
   const [assigneeFilter, setAssigneeFilter] = useState<string>('all');
@@ -234,7 +264,6 @@ export const useCustomerSearch = (customers: Customer[], destinationOptions: str
       const hasFilters = searchTerm !== '' || 
         statusFilter !== 'all' || 
         destinationFilter !== 'all' || 
-        packageTypeFilter !== 'all' || 
         leadTypeFilter !== 'all' ||
         serviceFilter !== 'all' ||
         assigneeFilter !== 'all';
@@ -252,7 +281,6 @@ export const useCustomerSearch = (customers: Customer[], destinationOptions: str
             searchTerm: searchTerm || undefined,
             status: statusFilter !== 'all' ? statusFilter : undefined,
             destination: destinationFilter !== 'all' ? destinationFilter : undefined,
-            packageType: packageTypeFilter !== 'all' ? packageTypeFilter : undefined,
             leadType: leadTypeFilter !== 'all' ? leadTypeFilter : undefined,
             service: serviceFilter !== 'all' ? serviceFilter : undefined,
             assignee: assigneeFilter !== 'all' ? assigneeFilter : undefined,
@@ -294,19 +322,18 @@ export const useCustomerSearch = (customers: Customer[], destinationOptions: str
 
           const matchesStatus = statusFilter === 'all' || customer.status === statusFilter;
           const matchesDestination = destinationFilter === 'all' || customer.destination === destinationFilter;
-          const matchesPackageType = packageTypeFilter === 'all' || customer.packageType === packageTypeFilter;
           const matchesLeadType = leadTypeFilter === 'all' || customer.leadType === leadTypeFilter;
           const matchesService = serviceFilter === 'all' || customer.service === serviceFilter;
           const matchesAssignee = assigneeFilter === 'all' || customer.assignee === assigneeFilter;
 
-          return matchesSearch && matchesStatus && matchesDestination && matchesPackageType && matchesLeadType && matchesService && matchesAssignee;
+          return matchesSearch && matchesStatus && matchesDestination && matchesLeadType && matchesService && matchesAssignee;
         });
         setFilteredCustomers(filtered);
       }
     };
 
     performSearch();
-  }, [customers, searchTerm, statusFilter, destinationFilter, packageTypeFilter, leadTypeFilter, serviceFilter, assigneeFilter]);
+  }, [customers, searchTerm, statusFilter, destinationFilter, leadTypeFilter, serviceFilter, assigneeFilter]);
 
   return {
     customers: filteredCustomers,
@@ -316,8 +343,6 @@ export const useCustomerSearch = (customers: Customer[], destinationOptions: str
     setStatusFilter,
     destinationFilter,
     setDestinationFilter,
-    packageTypeFilter,
-    setPackageTypeFilter,
     leadTypeFilter,
     setLeadTypeFilter,
     serviceFilter,

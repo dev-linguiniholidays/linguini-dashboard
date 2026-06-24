@@ -1,24 +1,23 @@
 'use client';
 
 import { useState } from 'react';
-import { Customer } from '@/lib/types';
+import { Booking } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, Edit, Trash2, MessageSquare, Eye, Lock, Check } from 'lucide-react';
+import { Search, Edit, Trash2, MessageSquare, Eye } from 'lucide-react';
 import { RoleGuard } from './RoleGuard';
 import { displayValue } from '@/lib/displayUtils';
-import { canEditCustomer, canConfirmBooking } from '@/lib/roleUtils';
+import { canEditBooking } from '@/lib/roleUtils';
 import { toast } from 'sonner';
 
-interface CustomerTableProps {
-  customers: Customer[];
-  onEdit: (customer: Customer) => void;
-  onView: (customer: Customer) => void;
+interface BookingTableProps {
+  bookings: Booking[];
+  onEdit: (booking: Booking) => void;
+  onView: (booking: Booking) => void;
   onDelete: (id: string) => void;
-  onAdd: () => void;
   searchTerm: string;
   onSearchChange: (term: string) => void;
   statusFilter: string;
@@ -31,21 +30,17 @@ interface CustomerTableProps {
   onServiceFilterChange: (service: string) => void;
   assigneeFilter: string;
   onAssigneeFilterChange: (assignee: string) => void;
-  onViewComments: (customer: Customer) => void;
-  onLock?: (id: string) => void;
-  onConfirmBooking?: (id: string) => void;
+  onViewComments: (booking: Booking) => void;
   destinationOptions?: string[];
   assigneeOptions?: string[];
 }
 
 const statusColors = {
-  fresh: 'bg-blue-100 text-blue-800 hover:opacity-70 transition-opacity',
-  'no-response': 'bg-gray-100 text-gray-800 hover:opacity-70 transition-opacity',
+  upcoming: 'bg-blue-100 text-blue-800 hover:opacity-70 transition-opacity',
   ongoing: 'bg-yellow-100 text-yellow-800 hover:opacity-70 transition-opacity',
-  converted: 'bg-green-100 text-green-800 hover:opacity-70 transition-opacity',
-  dead: 'bg-red-100 text-red-800 hover:opacity-70 transition-opacity',
-  future: 'bg-purple-100 text-purple-800 hover:opacity-70 transition-opacity',
-  hot: 'bg-orange-100 text-orange-800 hover:opacity-70 transition-opacity',
+  postponed: 'bg-purple-100 text-purple-800 hover:opacity-70 transition-opacity',
+  cancelled: 'bg-red-100 text-red-800 hover:opacity-70 transition-opacity',
+  completed: 'bg-green-100 text-green-800 hover:opacity-70 transition-opacity',
 };
 
 
@@ -85,7 +80,6 @@ const getAssigneeColor = (assignee: string): string => {
     'bg-teal-100 text-teal-800',
   ];
   
-  // Use a simple hash to consistently assign colors
   let hash = 0;
   for (let i = 0; i < assignee.length; i++) {
     hash = ((hash << 5) - hash + assignee.charCodeAt(i)) & 0xffffffff;
@@ -94,12 +88,11 @@ const getAssigneeColor = (assignee: string): string => {
   return `${colors[colorIndex]} hover:opacity-70 transition-opacity`;
 };
 
-export const CustomerTable = ({
-  customers,
+export const BookingTable = ({
+  bookings,
   onEdit,
   onView,
   onDelete,
-  onAdd,
   searchTerm,
   onSearchChange,
   statusFilter,
@@ -113,18 +106,16 @@ export const CustomerTable = ({
   assigneeFilter,
   onAssigneeFilterChange,
   onViewComments,
-  onLock,
-  onConfirmBooking,
   destinationOptions = [],
   assigneeOptions = [],
-}: CustomerTableProps) => {
+}: BookingTableProps) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
   const handleDelete = async (id: string) => {
     try {
       await onDelete(id);
-      toast.success('Customer deleted successfully!', {
+      toast.success('Booking deleted successfully!', {
         style: {
           backgroundColor: '#10b981',
           color: 'white',
@@ -132,14 +123,14 @@ export const CustomerTable = ({
         },
       });
     } catch {
-      toast.error('Failed to delete customer');
+      toast.error('Failed to delete booking');
     }
   };
 
-  const totalPages = Math.ceil(customers.length / itemsPerPage);
+  const totalPages = Math.ceil(bookings.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentCustomers = customers.slice(startIndex, endIndex);
+  const currentBookings = bookings.slice(startIndex, endIndex);
 
   const formatDate = (dateString: string | undefined | null) => {
     if (!dateString) return 'N/A';
@@ -160,17 +151,14 @@ export const CustomerTable = ({
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
-      fresh: 'Fresh',
-      'no-response': 'No Response',
+      upcoming: 'Upcoming',
       ongoing: 'Ongoing',
-      converted: 'Converted',
-      dead: 'Dead',
-      future: 'Future',
-      hot: 'Hot',
+      postponed: 'Postponed',
+      cancelled: 'Cancelled',
+      completed: 'Completed',
     };
     return labels[status] || status;
   };
-
 
 
   const getLeadTypeLabel = (type: string) => {
@@ -202,44 +190,37 @@ export const CustomerTable = ({
 
   const getAssigneeLabel = (assignee: string) => {
     if (assignee === 'none') return 'None';
-    return assignee; // Use the actual name from the database
+    return assignee;
   };
 
   return (
     <div className="space-y-4">
-      {/* Search and Add Customer */}
+      {/* Search Bar */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
-            placeholder="Search leads..."
+            placeholder="Search bookings..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             className="pl-10"
           />
         </div>
-        <Button onClick={onAdd} className="w-full sm:w-auto">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Lead
-        </Button>
       </div>
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
-        
         <Select value={statusFilter} onValueChange={onStatusFilterChange}>
           <SelectTrigger className="w-full sm:w-40">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="fresh">Fresh</SelectItem>
-            <SelectItem value="no-response">No Response</SelectItem>
+            <SelectItem value="upcoming">Upcoming</SelectItem>
             <SelectItem value="ongoing">Ongoing</SelectItem>
-            <SelectItem value="converted">Converted</SelectItem>
-            <SelectItem value="dead">Dead</SelectItem>
-            <SelectItem value="future">Future</SelectItem>
-            <SelectItem value="hot">Hot</SelectItem>
+            <SelectItem value="postponed">Postponed</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
           </SelectContent>
         </Select>
 
@@ -311,7 +292,7 @@ export const CustomerTable = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Lead Created</TableHead>
+              <TableHead>Created Date</TableHead>
               <TableHead>Travel Advisor</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Phone</TableHead>
@@ -322,130 +303,103 @@ export const CustomerTable = ({
               <TableHead>Pax</TableHead>
               <TableHead>Lead Type</TableHead>
               <TableHead>Service</TableHead>
+              <TableHead>Package Cost</TableHead>
+              <TableHead>Total Expenses</TableHead>
               <TableHead>Comments</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {currentCustomers.map((customer) => (
-              <TableRow key={customer.id}>
-                <TableCell>{formatDate(customer.leadCreationDate)}</TableCell>
-                <TableCell>
-                  <Badge className={getAssigneeColor(customer.assignee)}>
-                    {getAssigneeLabel(customer.assignee)}
-                  </Badge>
+            {currentBookings.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={15} className="text-center py-8 text-gray-500 italic">
+                  No bookings found. Confirm a punched-in customer lead to see it here!
                 </TableCell>
-                 <TableCell className="font-medium">
-                  <div className="flex items-center gap-1.5">
-                    {customer.name}
-                    {customer.isLocked && (
-                      <span title="Locked (Punched In)">
-                        <Lock className="h-3.5 w-3.5 text-amber-500" />
-                      </span>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>{customer.phone}</TableCell>
-                <TableCell>{displayValue(customer.destination)}</TableCell>
-                <TableCell>
-                  <Badge className={statusColors[customer.status]}>
-                    {getStatusLabel(customer.status)}
-                  </Badge>
-                </TableCell>
-                <TableCell>{formatDate(customer.travelStartDate)}</TableCell>
-                <TableCell>{formatDate(customer.travelEndDate)}</TableCell>
-                <TableCell>{displayValue(customer.numberOfPax)}</TableCell>
+              </TableRow>
+            ) : (
+              currentBookings.map((booking) => (
+                <TableRow key={booking.id}>
+                  <TableCell>{formatDate(booking.leadCreationDate)}</TableCell>
+                  <TableCell>
+                    <Badge className={getAssigneeColor(booking.assignee)}>
+                      {getAssigneeLabel(booking.assignee)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="font-medium">{booking.name}</TableCell>
+                  <TableCell>{booking.phone}</TableCell>
+                  <TableCell>{displayValue(booking.destination)}</TableCell>
+                  <TableCell>
+                    <Badge className={statusColors[booking.status] || 'bg-gray-100 text-gray-800'}>
+                      {getStatusLabel(booking.status)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{formatDate(booking.travelStartDate)}</TableCell>
+                  <TableCell>{formatDate(booking.travelEndDate)}</TableCell>
+                  <TableCell>{displayValue(booking.numberOfPax)}</TableCell>
 
-                <TableCell>
-                  <Badge className={leadTypeColors[customer.leadType]}>
-                    {getLeadTypeLabel(customer.leadType)}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge className={serviceColors[customer.service]}>
-                    {getServiceLabel(customer.service)}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onViewComments(customer)}
-                    className="flex items-center gap-1"
-                  >
-                    <MessageSquare className="h-3 w-3" />
-                    {customer.comments.length}
-                  </Button>
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
+                  <TableCell>
+                    <Badge className={leadTypeColors[booking.leadType]}>
+                      {getLeadTypeLabel(booking.leadType)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={serviceColors[booking.service]}>
+                      {getServiceLabel(booking.service)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="font-semibold">
+                    ₹{(booking.packageCost || 0).toLocaleString('en-IN')}
+                  </TableCell>
+                  <TableCell className="font-semibold text-rose-600">
+                    ₹{(booking.expenses || []).reduce((sum, exp) => sum + exp.amount, 0).toLocaleString('en-IN')}
+                  </TableCell>
+                  <TableCell>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => onView(customer)}
-                      title="View Details"
+                      onClick={() => onViewComments(booking)}
+                      className="flex items-center gap-1"
                     >
-                      <Eye className="h-3 w-3" />
+                      <MessageSquare className="h-3 w-3" />
+                      {booking.comments.length}
                     </Button>
-                    {!customer.isLocked && (
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => onLock && onLock(customer.id)}
-                        title="Punch In (Lock)"
-                        className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
+                        onClick={() => onView(booking)}
+                        title="View Details"
                       >
-                        <Lock className="h-3 w-3" />
+                        <Eye className="h-3 w-3" />
                       </Button>
-                    )}
-                    {customer.isLocked && (
-                      canConfirmBooking() ? (
+                      {canEditBooking() && (
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => onConfirmBooking && onConfirmBooking(customer.id)}
-                          title="Confirm & Move to Booking"
-                          className="bg-green-50 border-green-200 text-green-750 hover:bg-green-100 hover:text-green-800"
+                          onClick={() => onEdit(booking)}
+                          title="Edit Booking"
                         >
-                          <Check className="h-3 w-3" />
+                          <Edit className="h-3 w-3" />
                         </Button>
-                      ) : (
+                      )}
+                      <RoleGuard allowedRoles={['superadmin']}>
                         <Button
                           variant="outline"
                           size="sm"
-                          disabled
-                          title="Awaiting Admin Confirmation"
-                          className="bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed"
+                          onClick={() => handleDelete(booking.id)}
+                          className="text-red-600 hover:text-red-700"
+                          title="Delete Booking"
                         >
-                          <Lock className="h-3 w-3" />
+                          <Trash2 className="h-3 w-3" />
                         </Button>
-                      )
-                    )}
-                    {canEditCustomer(customer) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onEdit(customer)}
-                        title="Edit Lead"
-                      >
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                    )}
-                    <RoleGuard allowedRoles={['superadmin']}>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDelete(customer.id)}
-                        className="text-red-600 hover:text-red-700"
-                        title="Delete Lead"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </RoleGuard>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
+                      </RoleGuard>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>

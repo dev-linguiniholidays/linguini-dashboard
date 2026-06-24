@@ -6,12 +6,14 @@ import { CustomerTable } from '@/components/CustomerTable';
 import { CustomerForm } from '@/components/CustomerForm';
 import { CustomerDetails } from '@/components/CustomerDetails';
 import { useCustomers, useCustomerSearch } from '@/hooks/useCustomers';
+import { useBookings } from '@/hooks/useBookings';
 import { useAuth } from '@/contexts/AuthContext';
 import { Users, TrendingUp, Clock, CheckCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Dashboard() {
-  const { customers: allCustomers, addCustomer, updateCustomer, deleteCustomer, addComment, isLoading, destinationOptions, assigneeOptions } = useCustomers();
+  const { customers: allCustomers, addCustomer, updateCustomer, deleteCustomer, addComment, lockCustomer, confirmBooking, isLoading, destinationOptions, assigneeOptions } = useCustomers();
+  const { bookings: allBookings } = useBookings();
   const { user } = useAuth();
   const {
     customers,
@@ -21,8 +23,6 @@ export default function Dashboard() {
     setStatusFilter,
     destinationFilter,
     setDestinationFilter,
-    packageTypeFilter,
-    setPackageTypeFilter,
     leadTypeFilter,
     setLeadTypeFilter,
     serviceFilter,
@@ -40,9 +40,9 @@ export default function Dashboard() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
   // Calculate stats
-  const totalCustomers = customers.length;
+  const totalLeads = customers.length;
   const hotLeads = customers.filter(c => c.status === 'hot').length;
-  const convertedLeads = customers.filter(c => c.status === 'converted').length;
+  const totalBookings = allBookings.length;
   const ongoingLeads = customers.filter(c => c.status === 'ongoing').length;
 
   const handleAdd = () => {
@@ -65,11 +65,11 @@ export default function Dashboard() {
     setIsCommentModalOpen(true);
   };
 
-  const handleSave = async (customerData: Omit<Customer, 'id' | 'updatedAt' | 'comments'>) => {
+  const handleSave = async (customerData: Omit<Customer, 'id' | 'updatedAt' | 'comments' | 'isLocked'>) => {
     try {
       await addCustomer(customerData);
       setIsAddModalOpen(false);
-    } catch (_error) {
+    } catch {
       toast.error('Failed to add customer', {
         style: {
           backgroundColor: '#ef4444',
@@ -84,7 +84,7 @@ export default function Dashboard() {
       await updateCustomer({ id, ...updates });
       setIsEditModalOpen(false);
       setIsDetailsModalOpen(false);
-    } catch (_error) {
+    } catch {
       toast.error('Failed to update customer', {
         style: {
           backgroundColor: '#ef4444',
@@ -98,7 +98,7 @@ export default function Dashboard() {
     if (confirm('Are you sure you want to delete this customer?')) {
       try {
         await deleteCustomer(id);
-      } catch (_error) {
+      } catch {
         toast.error('Failed to delete customer', {
           style: {
             backgroundColor: '#ef4444',
@@ -118,7 +118,7 @@ export default function Dashboard() {
         userId: user.id, 
         userName: typeof window !== 'undefined' ? localStorage.getItem('user-name') || 'User' : 'User'
       });
-    } catch (_error) {
+    } catch {
       toast.error('Failed to add comment', {
         style: {
           backgroundColor: '#ef4444',
@@ -144,14 +144,14 @@ export default function Dashboard() {
               <Users className="h-6 w-6 text-blue-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Customers</p>
+              <p className="text-sm font-medium text-gray-600">Total Leads</p>
               {isLoading ? (
                 <div className="flex items-center">
                   <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
                   <span className="ml-2 text-gray-400">Loading...</span>
                 </div>
               ) : (
-                <p className="text-2xl font-bold text-gray-900">{totalCustomers}</p>
+                <p className="text-2xl font-bold text-gray-900">{totalLeads}</p>
               )}
             </div>
           </div>
@@ -182,14 +182,14 @@ export default function Dashboard() {
               <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Converted</p>
+              <p className="text-sm font-medium text-gray-600">Total Bookings</p>
               {isLoading ? (
                 <div className="flex items-center">
                   <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
                   <span className="ml-2 text-gray-400">Loading...</span>
                 </div>
               ) : (
-                <p className="text-2xl font-bold text-gray-900">{convertedLeads}</p>
+                <p className="text-2xl font-bold text-gray-900">{totalBookings}</p>
               )}
             </div>
           </div>
@@ -201,7 +201,7 @@ export default function Dashboard() {
               <Clock className="h-6 w-6 text-yellow-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Ongoing</p>
+              <p className="text-sm font-medium text-gray-600">Ongoing Leads</p>
               {isLoading ? (
                 <div className="flex items-center">
                   <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
@@ -218,14 +218,14 @@ export default function Dashboard() {
       {/* All Customers Table */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">All Customers</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Customer Leads Overview</h2>
         </div>
         
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-              <p className="text-gray-600">Loading customers...</p>
+              <p className="text-gray-600">Loading leads...</p>
             </div>
           </div>
         ) : (
@@ -241,8 +241,6 @@ export default function Dashboard() {
             onStatusFilterChange={setStatusFilter}
             destinationFilter={destinationFilter}
             onDestinationFilterChange={setDestinationFilter}
-            packageTypeFilter={packageTypeFilter}
-            onPackageTypeFilterChange={setPackageTypeFilter}
             leadTypeFilter={leadTypeFilter}
             onLeadTypeFilterChange={setLeadTypeFilter}
             serviceFilter={serviceFilter}
@@ -250,6 +248,8 @@ export default function Dashboard() {
             assigneeFilter={assigneeFilter}
             onAssigneeFilterChange={setAssigneeFilter}
             onViewComments={handleViewComments}
+            onLock={lockCustomer}
+            onConfirmBooking={confirmBooking}
             destinationOptions={searchDestinationOptions}
             assigneeOptions={searchAssigneeOptions}
           />
@@ -275,25 +275,29 @@ export default function Dashboard() {
       />
 
       {/* Customer Details Modal */}
-      {selectedCustomer && (
+      {selectedCustomer && isDetailsModalOpen && (
         <CustomerDetails
           customer={selectedCustomer}
           isOpen={isDetailsModalOpen}
           onClose={() => setIsDetailsModalOpen(false)}
           onUpdate={handleUpdate}
           onAddComment={handleAddComment}
+          onLock={lockCustomer}
+          onConfirmBooking={confirmBooking}
           assigneeOptions={searchAssigneeOptions}
         />
       )}
 
       {/* Customer Comments Modal */}
-      {selectedCustomer && (
+      {selectedCustomer && isCommentModalOpen && (
         <CustomerDetails
           customer={selectedCustomer}
           isOpen={isCommentModalOpen}
           onClose={() => setIsCommentModalOpen(false)}
           onUpdate={handleUpdate}
           onAddComment={handleAddComment}
+          onLock={lockCustomer}
+          onConfirmBooking={confirmBooking}
           assigneeOptions={searchAssigneeOptions}
           commentMode={true}
         />

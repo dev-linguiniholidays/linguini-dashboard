@@ -57,6 +57,16 @@ export const canAddCustomer = (): boolean => {
   return true; // All roles can add customers
 };
 
+export const canEditBooking = (): boolean => {
+  const role = getStoredRole();
+  return role === 'superadmin' || role === 'admin';
+};
+
+export const canConfirmBooking = (): boolean => {
+  const role = getStoredRole();
+  return role === 'superadmin' || role === 'admin';
+};
+
 export const getCurrentUser = () => {
   const role = getStoredRole();
   const storedName = typeof window !== 'undefined' ? localStorage.getItem('user-name') : null;

@@ -11,7 +11,7 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function CustomersPage() {
-  const { customers: allCustomers, addCustomer, updateCustomer, deleteCustomer, addComment, isLoading, destinationOptions, assigneeOptions } = useCustomers();
+  const { customers: allCustomers, addCustomer, updateCustomer, deleteCustomer, addComment, lockCustomer, confirmBooking, isLoading, destinationOptions, assigneeOptions } = useCustomers();
   const { user } = useAuth();
   const {
     customers,
@@ -21,8 +21,6 @@ export default function CustomersPage() {
     setStatusFilter,
     destinationFilter,
     setDestinationFilter,
-    packageTypeFilter,
-    setPackageTypeFilter,
     leadTypeFilter,
     setLeadTypeFilter,
     serviceFilter,
@@ -59,12 +57,12 @@ export default function CustomersPage() {
     setIsCommentModalOpen(true);
   };
 
-  const handleSave = async (customerData: Omit<Customer, 'id' | 'updatedAt' | 'comments'>) => {
+  const handleSave = async (customerData: Omit<Customer, 'id' | 'updatedAt' | 'comments' | 'isLocked'>) => {
     try {
       await addCustomer(customerData);
       setIsAddModalOpen(false);
-    } catch (_error) {
-      toast.error('Failed to add customer', {
+    } catch {
+      toast.error('Failed to add customer lead', {
         style: {
           backgroundColor: '#ef4444',
           color: 'white',
@@ -78,8 +76,8 @@ export default function CustomersPage() {
       await updateCustomer({ id, ...updates });
       setIsEditModalOpen(false);
       setIsDetailsModalOpen(false);
-    } catch (_error) {
-      toast.error('Failed to update customer', {
+    } catch {
+      toast.error('Failed to update customer lead', {
         style: {
           backgroundColor: '#ef4444',
           color: 'white',
@@ -89,11 +87,11 @@ export default function CustomersPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this customer?')) {
+    if (confirm('Are you sure you want to delete this customer lead?')) {
       try {
         await deleteCustomer(id);
-      } catch (_error) {
-        toast.error('Failed to delete customer', {
+      } catch {
+        toast.error('Failed to delete customer lead', {
           style: {
             backgroundColor: '#ef4444',
             color: 'white',
@@ -112,7 +110,7 @@ export default function CustomersPage() {
         userId: user.id, 
         userName: typeof window !== 'undefined' ? localStorage.getItem('user-name') || 'User' : 'User'
       });
-    } catch (_error) {
+    } catch {
       toast.error('Failed to add comment', {
         style: {
           backgroundColor: '#ef4444',
@@ -125,15 +123,15 @@ export default function CustomersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Customers</h1>
-        <p className="text-gray-600">Manage your travel customers and leads</p>
+        <h1 className="text-3xl font-bold text-gray-900">Customer Leads</h1>
+        <p className="text-gray-600">Manage your travel customer leads and requests</p>
       </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-            <p className="text-gray-600">Loading customers...</p>
+            <p className="text-gray-600">Loading customer leads...</p>
           </div>
         </div>
       ) : (
@@ -149,8 +147,6 @@ export default function CustomersPage() {
           onStatusFilterChange={setStatusFilter}
           destinationFilter={destinationFilter}
           onDestinationFilterChange={setDestinationFilter}
-          packageTypeFilter={packageTypeFilter}
-          onPackageTypeFilterChange={setPackageTypeFilter}
           leadTypeFilter={leadTypeFilter}
           onLeadTypeFilterChange={setLeadTypeFilter}
           serviceFilter={serviceFilter}
@@ -158,6 +154,8 @@ export default function CustomersPage() {
           assigneeFilter={assigneeFilter}
           onAssigneeFilterChange={setAssigneeFilter}
           onViewComments={handleViewComments}
+          onLock={lockCustomer}
+          onConfirmBooking={confirmBooking}
           destinationOptions={searchDestinationOptions}
           assigneeOptions={searchAssigneeOptions}
         />
@@ -182,25 +180,29 @@ export default function CustomersPage() {
       />
 
       {/* Customer Details Modal */}
-      {selectedCustomer && (
+      {selectedCustomer && isDetailsModalOpen && (
         <CustomerDetails
           customer={selectedCustomer}
           isOpen={isDetailsModalOpen}
           onClose={() => setIsDetailsModalOpen(false)}
           onUpdate={handleUpdate}
           onAddComment={handleAddComment}
+          onLock={lockCustomer}
+          onConfirmBooking={confirmBooking}
           assigneeOptions={searchAssigneeOptions}
         />
       )}
 
       {/* Customer Comments Modal */}
-      {selectedCustomer && (
+      {selectedCustomer && isCommentModalOpen && (
         <CustomerDetails
           customer={selectedCustomer}
           isOpen={isCommentModalOpen}
           onClose={() => setIsCommentModalOpen(false)}
           onUpdate={handleUpdate}
           onAddComment={handleAddComment}
+          onLock={lockCustomer}
+          onConfirmBooking={confirmBooking}
           assigneeOptions={searchAssigneeOptions}
           commentMode={true}
         />

@@ -24,12 +24,12 @@ export interface Database {
           travel_end_date: string | null
           lead_creation_date: string
           number_of_pax: number
-          package_type: 'private' | 'group'
           lead_type: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other'
           service: 'tour-package' | 'flight' | 'train' | 'visa' | 'group-departure' | 'bus' | 'cab' | 'hotel'
           assignee: string
           created_at: string
           updated_at: string
+          is_locked: boolean
         }
         Insert: {
           id?: string
@@ -42,12 +42,12 @@ export interface Database {
           travel_end_date?: string | null
           lead_creation_date?: string
           number_of_pax?: number
-          package_type?: 'private' | 'group'
           lead_type?: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other'
           service?: 'tour-package' | 'flight' | 'train' | 'visa' | 'group-departure' | 'bus' | 'cab' | 'hotel'
           assignee?: string
           created_at?: string
           updated_at?: string
+          is_locked?: boolean
         }
         Update: {
           id?: string
@@ -60,12 +60,68 @@ export interface Database {
           travel_end_date?: string | null
           lead_creation_date?: string
           number_of_pax?: number
-          package_type?: 'private' | 'group'
           lead_type?: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other'
           service?: 'tour-package' | 'flight' | 'train' | 'visa' | 'group-departure' | 'bus' | 'cab' | 'hotel'
           assignee?: string
           created_at?: string
           updated_at?: string
+          is_locked?: boolean
+        }
+      }
+      bookings: {
+        Row: {
+          id: string
+          name: string
+          phone: string
+          destination: string | null
+          status: 'upcoming' | 'ongoing' | 'postponed' | 'cancelled' | 'completed'
+          description: string | null
+          travel_start_date: string | null
+          travel_end_date: string | null
+          lead_creation_date: string
+          number_of_pax: number
+          lead_type: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other'
+          service: 'tour-package' | 'flight' | 'train' | 'visa' | 'group-departure' | 'bus' | 'cab' | 'hotel'
+          assignee: string
+          created_at: string
+          updated_at: string
+          package_cost: number
+        }
+        Insert: {
+          id?: string
+          name: string
+          phone: string
+          destination?: string | null
+          status?: 'upcoming' | 'ongoing' | 'postponed' | 'cancelled' | 'completed'
+          description?: string | null
+          travel_start_date?: string | null
+          travel_end_date?: string | null
+          lead_creation_date?: string
+          number_of_pax?: number
+          lead_type?: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other'
+          service?: 'tour-package' | 'flight' | 'train' | 'visa' | 'group-departure' | 'bus' | 'cab' | 'hotel'
+          assignee?: string
+          created_at?: string
+          updated_at?: string
+          package_cost?: number
+        }
+        Update: {
+          id?: string
+          name?: string
+          phone?: string
+          destination?: string | null
+          status?: 'upcoming' | 'ongoing' | 'postponed' | 'cancelled' | 'completed'
+          description?: string | null
+          travel_start_date?: string | null
+          travel_end_date?: string | null
+          lead_creation_date?: string
+          number_of_pax?: number
+          lead_type?: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other'
+          service?: 'tour-package' | 'flight' | 'train' | 'visa' | 'group-departure' | 'bus' | 'cab' | 'hotel'
+          assignee?: string
+          created_at?: string
+          updated_at?: string
+          package_cost?: number
         }
       }
       customer_comments: {
@@ -89,6 +145,64 @@ export interface Database {
           id?: string
           customer_id?: string
           text?: string
+          user_id?: string
+          user_name?: string
+          created_at?: string
+        }
+      }
+      booking_comments: {
+        Row: {
+          id: string
+          booking_id: string
+          text: string
+          user_id: string
+          user_name: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          booking_id: string
+          text: string
+          user_id: string
+          user_name: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          booking_id?: string
+          text?: string
+          user_id?: string
+          user_name?: string
+          created_at?: string
+        }
+      }
+      booking_expenses: {
+        Row: {
+          id: string
+          booking_id: string
+          amount: number
+          category: 'Hotel' | 'Taxi' | 'Bus' | 'Guide' | 'Travel Hamper' | 'Medical Kit' | 'Misc.'
+          description: string | null
+          user_id: string
+          user_name: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          booking_id: string
+          amount: number
+          category: 'Hotel' | 'Taxi' | 'Bus' | 'Guide' | 'Travel Hamper' | 'Medical Kit' | 'Misc.'
+          description?: string | null
+          user_id: string
+          user_name: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          booking_id?: string
+          amount?: number
+          category?: 'Hotel' | 'Taxi' | 'Bus' | 'Guide' | 'Travel Hamper' | 'Medical Kit' | 'Misc.'
+          description?: string | null
           user_id?: string
           user_name?: string
           created_at?: string

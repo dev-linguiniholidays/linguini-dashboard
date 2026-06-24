@@ -25,11 +25,6 @@ const statusColors = {
   hot: 'bg-orange-100 text-orange-800 hover:opacity-70 transition-opacity',
 };
 
-const packageTypeColors = {
-  private: 'bg-indigo-100 text-indigo-800 hover:opacity-70 transition-opacity',
-  group: 'bg-pink-100 text-pink-800 hover:opacity-70 transition-opacity',
-};
-
 const leadTypeColors = {
   calling: 'bg-blue-100 text-blue-800 hover:opacity-70 transition-opacity',
   instagram: 'bg-pink-100 text-pink-800 hover:opacity-70 transition-opacity',
@@ -125,10 +120,6 @@ export default function CustomerDetailPage() {
     return labels[status] || status;
   };
 
-  const getPackageTypeLabel = (type: string) => {
-    return type === 'private' ? 'Private' : 'Group';
-  };
-
   const getLeadTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
       calling: 'Calling',
@@ -145,7 +136,7 @@ export default function CustomerDetailPage() {
   const handleUpdate = async (id: string, updates: Partial<Customer>) => {
     try {
       await updateCustomer({ id, ...updates });
-    } catch (_error) {
+    } catch {
       toast.error('Failed to update customer', {
         style: {
           backgroundColor: '#ef4444',
@@ -164,7 +155,7 @@ export default function CustomerDetailPage() {
         userId: user.id, 
         userName: typeof window !== 'undefined' ? localStorage.getItem('user-name') || 'User' : 'User'
       });
-    } catch (_error) {
+    } catch {
       toast.error('Failed to add comment', {
         style: {
           backgroundColor: '#ef4444',
@@ -233,12 +224,6 @@ export default function CustomerDetailPage() {
               <span className="text-sm font-medium text-gray-500">Status:</span>
               <Badge className={`ml-2 ${statusColors[customer.status]}`}>
                 {getStatusLabel(customer.status)}
-              </Badge>
-            </div>
-            <div>
-              <span className="text-sm font-medium text-gray-500">Package Type:</span>
-              <Badge className={`ml-2 ${packageTypeColors[customer.packageType]}`}>
-                {getPackageTypeLabel(customer.packageType)}
               </Badge>
             </div>
             <div>
