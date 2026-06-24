@@ -294,6 +294,7 @@ export const BookingTable = ({
           <TableHeader>
             <TableRow>
               <TableHead>Created Date</TableHead>
+              <TableHead>Booking ID</TableHead>
               <TableHead>Travel Advisor</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Phone</TableHead>
@@ -313,7 +314,7 @@ export const BookingTable = ({
           <TableBody>
             {currentBookings.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={15} className="text-center py-8 text-gray-500 italic">
+                <TableCell colSpan={16} className="text-center py-8 text-gray-500 italic">
                   No bookings found. Confirm a punched-in customer lead to see it here!
                 </TableCell>
               </TableRow>
@@ -321,6 +322,11 @@ export const BookingTable = ({
               currentBookings.map((booking) => (
                 <TableRow key={booking.id}>
                   <TableCell>{formatDate(booking.leadCreationDate)}</TableCell>
+                  <TableCell>
+                    <code className="px-2 py-0.5 bg-slate-100 text-slate-800 rounded font-mono text-xs font-semibold border border-slate-200 select-all">
+                      {booking.bookingId || 'N/A'}
+                    </code>
+                  </TableCell>
                   <TableCell>
                     <Badge className={getAssigneeColor(booking.assignee)}>
                       {getAssigneeLabel(booking.assignee)}

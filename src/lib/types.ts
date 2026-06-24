@@ -37,6 +37,7 @@ export interface Expense {
 
 export interface Booking {
   id: string;
+  bookingId?: string;
   name: string;
   phone: string;
   destination: string;

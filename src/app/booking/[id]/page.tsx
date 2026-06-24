@@ -365,6 +365,9 @@ export default function BookingDetailPage() {
           <div>
             <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2 flex-wrap">
               {booking.name}
+              <code className="text-xs md:text-sm font-mono font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 border border-slate-200 rounded-md select-all">
+                {booking.bookingId || 'N/A'}
+              </code>
             </h1>
             <p className="text-gray-500 text-sm mt-1">
               Destination: <span className="font-semibold text-gray-700">{displayValue(booking.destination)}</span>
@@ -409,6 +412,13 @@ export default function BookingDetailPage() {
               <div className="space-y-4">
                 <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Contact details</h3>
                 
+                <div className="space-y-2">
+                  <Label>Booking ID</Label>
+                  <p className="text-sm font-mono font-semibold text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-200 select-all">
+                    {booking.bookingId || 'N/A'}
+                  </p>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="book-name">Customer Name</Label>
                   {isEditing ? (

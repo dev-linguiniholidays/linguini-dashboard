@@ -218,9 +218,50 @@ export const customerService = {
 
     if (commentsFetchError) throw commentsFetchError;
 
+    // Fetch all existing bookings to calculate the next incremental number for the current financial year
+    const { data: bookingsData, error: bookingsFetchError } = await supabase
+      .from('bookings')
+      .select('booking_id');
+
+    if (bookingsFetchError) throw bookingsFetchError;
+
+    // Financial year calculation (April 1 to March 31)
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    let startYear = year;
+    let endYear = year + 1;
+    if (month < 3) { // Jan, Feb, Mar are in the previous financial year
+      startYear = year - 1;
+      endYear = year;
+    }
+    const xx = String(startYear).slice(-2);
+    const yy = String(endYear).slice(-2);
+    const fyStr = `${xx}/${yy}`;
+    const fyPrefix = `LH${fyStr}-`;
+
+    let maxNumber = 130;
+    if (bookingsData && bookingsData.length > 0) {
+      for (const b of bookingsData) {
+        if (b.booking_id && b.booking_id.startsWith(fyPrefix)) {
+          const match = b.booking_id.match(/-(\d{4})$/);
+          if (match) {
+            const num = parseInt(match[1], 10);
+            if (num > maxNumber) {
+              maxNumber = num;
+            }
+          }
+        }
+      }
+    }
+    const nextNumber = maxNumber + 1;
+    const formattedNumber = String(nextNumber).padStart(4, '0');
+    const generatedBookingId = `${fyPrefix}${formattedNumber}`;
+
     // 3. Create booking entry (preserve ID)
     const bookingInsert: BookingInsert = {
       id: customer.id,
+      booking_id: generatedBookingId,
       name: customer.name,
       phone: customer.phone,
       destination: customer.destination,
@@ -561,6 +602,7 @@ export const bookingCommentService = {
 // Helper function to convert database booking to frontend format
 export const convertDbBookingToFrontend = (dbBooking: Booking) => ({
   id: dbBooking.id,
+  bookingId: dbBooking.booking_id || '',
   name: dbBooking.name,
   phone: dbBooking.phone,
   destination: dbBooking.destination || '',
@@ -594,6 +636,7 @@ export const convertFrontendBookingToDb = (frontendBooking: Omit<FrontendBooking
   service: frontendBooking.service,
   assignee: frontendBooking.assignee,
   package_cost: frontendBooking.packageCost || 0,
+  booking_id: frontendBooking.bookingId || null,
 });
 
 // Helper function to convert partial frontend booking updates to database format
@@ -613,6 +656,7 @@ export const convertPartialFrontendBookingToDb = (updates: Partial<FrontendBooki
   if (updates.service !== undefined) dbUpdates.service = updates.service;
   if (updates.assignee !== undefined) dbUpdates.assignee = updates.assignee;
   if (updates.packageCost !== undefined) dbUpdates.package_cost = updates.packageCost;
+  if (updates.bookingId !== undefined) dbUpdates.booking_id = updates.bookingId || null;
   
   return dbUpdates;
 };

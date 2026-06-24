@@ -297,8 +297,11 @@ export const BookingDetails = ({
       <DialogContent className="w-full h-full max-w-none max-h-none md:max-w-4xl md:max-h-[90vh] md:w-auto md:h-auto overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-lg md:text-xl font-semibold">
+            <DialogTitle className="text-lg md:text-xl font-semibold flex items-center gap-2">
               Booking Details
+              <code className="text-xs font-mono font-semibold px-2 py-0.5 bg-slate-100 text-slate-700 border border-slate-200 rounded select-all">
+                {booking.bookingId || 'N/A'}
+              </code>
             </DialogTitle>
             <div className="flex gap-3 mr-8">
               {isEditing ? (
@@ -327,6 +330,13 @@ export const BookingDetails = ({
         <div className="space-y-6">
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2 md:col-span-2">
+              <Label>Booking ID</Label>
+              <p className="text-sm font-mono font-semibold text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-200 select-all w-fit">
+                {booking.bookingId || 'N/A'}
+              </p>
+            </div>
+
             <div className="space-y-2">
               <Label>Name</Label>
               {isEditing ? (

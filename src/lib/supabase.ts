@@ -71,6 +71,7 @@ export interface Database {
       bookings: {
         Row: {
           id: string
+          booking_id: string | null
           name: string
           phone: string
           destination: string | null
@@ -89,6 +90,7 @@ export interface Database {
         }
         Insert: {
           id?: string
+          booking_id?: string | null
           name: string
           phone: string
           destination?: string | null
@@ -107,6 +109,7 @@ export interface Database {
         }
         Update: {
           id?: string
+          booking_id?: string | null
           name?: string
           phone?: string
           destination?: string | null

@@ -106,6 +106,7 @@ ALTER TABLE public.customers ADD COLUMN IF NOT EXISTS is_locked BOOLEAN NOT NULL
 -- Create public.bookings Table
 CREATE TABLE IF NOT EXISTS public.bookings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  booking_id TEXT UNIQUE,
   name TEXT NOT NULL,
   phone TEXT NOT NULL,
   destination TEXT,
