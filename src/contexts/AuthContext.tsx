@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase, signIn as supabaseSignIn, signUp as supabaseSignUp, signOut as supabaseSignOut } from '@/lib/supabase';
 import { customerService } from '@/lib/database';
-import { setStoredRole, setStoredUserId } from '@/lib/roleUtils';
+import { setStoredRole, setStoredUserId, UserRole } from '@/lib/roleUtils';
 
 interface AuthContextType {
   user: User | null;
@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           try {
             const userInfo = await customerService.getUserByEmail(session.user.email);
             if (userInfo) {
-              setStoredRole(userInfo.role as 'admin' | 'user');
+              setStoredRole(userInfo.role as UserRole);
               localStorage.setItem('user-name', userInfo.name);
             } else {
               setStoredRole('user');
@@ -124,7 +124,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             try {
               const userInfo = await customerService.getUserByEmail(session.user.email);
               if (userInfo) {
-                setStoredRole(userInfo.role as 'admin' | 'user');
+                setStoredRole(userInfo.role as UserRole);
                 localStorage.setItem('user-name', userInfo.name);
               } else {
                 setStoredRole('user');
@@ -159,7 +159,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const userInfo = await customerService.getUserByEmail(email);
         if (userInfo) {
           // Set role from database
-          setStoredRole(userInfo.role as 'admin' | 'user');
+          setStoredRole(userInfo.role as UserRole);
           // Store user name in localStorage for use in comments
           localStorage.setItem('user-name', userInfo.name);
         } else {
@@ -187,7 +187,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const userInfo = await customerService.getUserByEmail(email);
         if (userInfo) {
           // Set role from database
-          setStoredRole(userInfo.role as 'admin' | 'user');
+          setStoredRole(userInfo.role as UserRole);
           // Store user name in localStorage for use in comments
           localStorage.setItem('user-name', userInfo.name);
         } else {
