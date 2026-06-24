@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Customer } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -337,7 +338,12 @@ export const CustomerTable = ({
                 </TableCell>
                  <TableCell className="font-medium">
                   <div className="flex items-center gap-1.5">
-                    {customer.name}
+                    <Link
+                      href={`/customer/${customer.id}`}
+                      className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                    >
+                      {customer.name}
+                    </Link>
                     {customer.isLocked && (
                       <span title="Locked (Punched In)">
                         <Lock className="h-3.5 w-3.5 text-amber-500" />

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Booking } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -325,7 +326,14 @@ export const BookingTable = ({
                       {getAssigneeLabel(booking.assignee)}
                     </Badge>
                   </TableCell>
-                  <TableCell className="font-medium">{booking.name}</TableCell>
+                  <TableCell className="font-medium">
+                    <Link
+                      href={`/booking/${booking.id}`}
+                      className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                    >
+                      {booking.name}
+                    </Link>
+                  </TableCell>
                   <TableCell>{booking.phone}</TableCell>
                   <TableCell>{displayValue(booking.destination)}</TableCell>
                   <TableCell>

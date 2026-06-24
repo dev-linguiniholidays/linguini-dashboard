@@ -1,18 +1,17 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Customer } from '@/lib/types';
 import { CustomerTable } from '@/components/CustomerTable';
 import { CustomerForm } from '@/components/CustomerForm';
-import { CustomerDetails } from '@/components/CustomerDetails';
 import { useCustomers, useCustomerSearch } from '@/hooks/useCustomers';
-import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function CustomersPage() {
-  const { customers: allCustomers, addCustomer, updateCustomer, deleteCustomer, addComment, lockCustomer, confirmBooking, isLoading, destinationOptions, assigneeOptions } = useCustomers();
-  const { user } = useAuth();
+  const router = useRouter();
+  const { customers: allCustomers, addCustomer, deleteCustomer, lockCustomer, confirmBooking, isLoading, destinationOptions, assigneeOptions } = useCustomers();
   const {
     customers,
     searchTerm,
@@ -32,29 +31,21 @@ export default function CustomersPage() {
   } = useCustomerSearch(allCustomers, destinationOptions, assigneeOptions);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
   const handleAdd = () => {
-    setSelectedCustomer(null);
     setIsAddModalOpen(true);
   };
 
   const handleEdit = (customer: Customer) => {
-    setSelectedCustomer(customer);
-    setIsEditModalOpen(true);
+    router.push(`/customer/${customer.id}?edit=true`);
   };
 
   const handleView = (customer: Customer) => {
-    setSelectedCustomer(customer);
-    setIsDetailsModalOpen(true);
+    router.push(`/customer/${customer.id}`);
   };
 
   const handleViewComments = (customer: Customer) => {
-    setSelectedCustomer(customer);
-    setIsCommentModalOpen(true);
+    router.push(`/customer/${customer.id}?tab=comments`);
   };
 
   const handleSave = async (customerData: Omit<Customer, 'id' | 'updatedAt' | 'comments' | 'isLocked'>) => {
@@ -63,21 +54,6 @@ export default function CustomersPage() {
       setIsAddModalOpen(false);
     } catch {
       toast.error('Failed to add customer lead', {
-        style: {
-          backgroundColor: '#ef4444',
-          color: 'white',
-        },
-      });
-    }
-  };
-
-  const handleUpdate = async (id: string, updates: Partial<Customer>) => {
-    try {
-      await updateCustomer({ id, ...updates });
-      setIsEditModalOpen(false);
-      setIsDetailsModalOpen(false);
-    } catch {
-      toast.error('Failed to update customer lead', {
         style: {
           backgroundColor: '#ef4444',
           color: 'white',
@@ -98,25 +74,6 @@ export default function CustomersPage() {
           },
         });
       }
-    }
-  };
-
-  const handleAddComment = async (customerId: string, text: string) => {
-    if (!user) return;
-    try {
-      await addComment({ 
-        customerId, 
-        text, 
-        userId: user.id, 
-        userName: typeof window !== 'undefined' ? localStorage.getItem('user-name') || 'User' : 'User'
-      });
-    } catch {
-      toast.error('Failed to add comment', {
-        style: {
-          backgroundColor: '#ef4444',
-          color: 'white',
-        },
-      });
     }
   };
 
@@ -169,44 +126,7 @@ export default function CustomersPage() {
         assigneeOptions={searchAssigneeOptions}
       />
 
-      {/* Edit Customer Modal */}
-      <CustomerForm
-        customer={selectedCustomer || undefined}
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        onSave={handleSave}
-        onUpdate={handleUpdate}
-        assigneeOptions={searchAssigneeOptions}
-      />
-
-      {/* Customer Details Modal */}
-      {selectedCustomer && isDetailsModalOpen && (
-        <CustomerDetails
-          customer={selectedCustomer}
-          isOpen={isDetailsModalOpen}
-          onClose={() => setIsDetailsModalOpen(false)}
-          onUpdate={handleUpdate}
-          onAddComment={handleAddComment}
-          onLock={lockCustomer}
-          onConfirmBooking={confirmBooking}
-          assigneeOptions={searchAssigneeOptions}
-        />
-      )}
-
-      {/* Customer Comments Modal */}
-      {selectedCustomer && isCommentModalOpen && (
-        <CustomerDetails
-          customer={selectedCustomer}
-          isOpen={isCommentModalOpen}
-          onClose={() => setIsCommentModalOpen(false)}
-          onUpdate={handleUpdate}
-          onAddComment={handleAddComment}
-          onLock={lockCustomer}
-          onConfirmBooking={confirmBooking}
-          assigneeOptions={searchAssigneeOptions}
-          commentMode={true}
-        />
-      )}
+      {/* Modals for edit, details, and comments have been replaced by the dedicated customer details page */}
     </div>
   );
 }

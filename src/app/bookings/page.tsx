@@ -1,27 +1,21 @@
 'use client';
 
-import { useState } from 'react';
-import { Booking, Expense } from '@/lib/types';
+import { useRouter } from 'next/navigation';
+import { Booking } from '@/lib/types';
 import { BookingTable } from '@/components/BookingTable';
-import { BookingDetails } from '@/components/BookingDetails';
 import { useBookings, useBookingSearch } from '@/hooks/useBookings';
-import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function BookingsPage() {
+  const router = useRouter();
   const { 
     bookings: allBookings, 
-    updateBooking, 
     deleteBooking, 
-    addComment, 
-    addExpense,
-    deleteExpense,
     isLoading, 
     destinationOptions, 
     assigneeOptions 
   } = useBookings();
-  const { user } = useAuth();
   const {
     bookings,
     searchTerm,
@@ -40,41 +34,16 @@ export default function BookingsPage() {
     assigneeOptions: searchAssigneeOptions,
   } = useBookingSearch(allBookings, destinationOptions, assigneeOptions);
 
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-
-  const activeBooking = selectedBooking ? bookings.find(b => b.id === selectedBooking.id) || selectedBooking : null;
-
   const handleEdit = (booking: Booking) => {
-    setSelectedBooking(booking);
-    setIsEditModalOpen(true);
+    router.push(`/booking/${booking.id}?edit=true`);
   };
 
   const handleView = (booking: Booking) => {
-    setSelectedBooking(booking);
-    setIsDetailsModalOpen(true);
+    router.push(`/booking/${booking.id}`);
   };
 
   const handleViewComments = (booking: Booking) => {
-    setSelectedBooking(booking);
-    setIsCommentModalOpen(true);
-  };
-
-  const handleUpdate = async (id: string, updates: Partial<Booking>) => {
-    try {
-      await updateBooking({ id, ...updates });
-      setIsEditModalOpen(false);
-      setIsDetailsModalOpen(false);
-    } catch {
-      toast.error('Failed to update booking', {
-        style: {
-          backgroundColor: '#ef4444',
-          color: 'white',
-        },
-      });
-    }
+    router.push(`/booking/${booking.id}?tab=comments`);
   };
 
   const handleDelete = async (id: string) => {
@@ -89,59 +58,6 @@ export default function BookingsPage() {
           },
         });
       }
-    }
-  };
-
-  const handleAddComment = async (bookingId: string, text: string) => {
-    if (!user) return;
-    try {
-      await addComment({ 
-        bookingId, 
-        text, 
-        userId: user.id, 
-        userName: typeof window !== 'undefined' ? localStorage.getItem('user-name') || 'User' : 'User'
-      });
-    } catch {
-      toast.error('Failed to add comment', {
-        style: {
-          backgroundColor: '#ef4444',
-          color: 'white',
-        },
-      });
-    }
-  };
-
-  const handleAddExpense = async (bookingId: string, amount: number, category: Expense['category'], description: string) => {
-    if (!user) return;
-    try {
-      await addExpense({
-        bookingId,
-        amount,
-        category,
-        description,
-        userId: user.id,
-        userName: typeof window !== 'undefined' ? localStorage.getItem('user-name') || 'User' : 'User'
-      });
-    } catch {
-      toast.error('Failed to add expense', {
-        style: {
-          backgroundColor: '#ef4444',
-          color: 'white',
-        },
-      });
-    }
-  };
-
-  const handleDeleteExpense = async (bookingId: string, expenseId: string) => {
-    try {
-      await deleteExpense(bookingId, expenseId);
-    } catch {
-      toast.error('Failed to delete expense', {
-        style: {
-          backgroundColor: '#ef4444',
-          color: 'white',
-        },
-      });
     }
   };
 
@@ -183,48 +99,7 @@ export default function BookingsPage() {
         />
       )}
 
-      {/* Edit Booking Modal */}
-      {activeBooking && isEditModalOpen && (
-        <BookingDetails
-          booking={activeBooking}
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-          onUpdate={handleUpdate}
-          onAddComment={handleAddComment}
-          onAddExpense={handleAddExpense}
-          onDeleteExpense={handleDeleteExpense}
-          assigneeOptions={searchAssigneeOptions}
-        />
-      )}
-
-      {/* Booking Details Modal */}
-      {activeBooking && isDetailsModalOpen && (
-        <BookingDetails
-          booking={activeBooking}
-          isOpen={isDetailsModalOpen}
-          onClose={() => setIsDetailsModalOpen(false)}
-          onUpdate={handleUpdate}
-          onAddComment={handleAddComment}
-          onAddExpense={handleAddExpense}
-          onDeleteExpense={handleDeleteExpense}
-          assigneeOptions={searchAssigneeOptions}
-        />
-      )}
-
-      {/* Booking Comments Modal */}
-      {activeBooking && isCommentModalOpen && (
-        <BookingDetails
-          booking={activeBooking}
-          isOpen={isCommentModalOpen}
-          onClose={() => setIsCommentModalOpen(false)}
-          onUpdate={handleUpdate}
-          onAddComment={handleAddComment}
-          onAddExpense={handleAddExpense}
-          onDeleteExpense={handleDeleteExpense}
-          assigneeOptions={searchAssigneeOptions}
-          commentMode={true}
-        />
-      )}
+      {/* Modals for edit, details, and comments have been replaced by the dedicated booking details page */}
     </div>
   );
 }
