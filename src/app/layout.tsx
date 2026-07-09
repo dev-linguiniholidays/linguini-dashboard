@@ -61,6 +61,56 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                // 1. Intercept chunk load failures via window error events (capture phase)
+                window.addEventListener('error', function(event) {
+                  var target = event.target;
+                  if (target && (target.nodeName === 'SCRIPT' || target.nodeName === 'LINK')) {
+                    var url = target.src || target.href;
+                    if (url && (url.indexOf('/_next/static/') !== -1 || url.indexOf('/static/') !== -1)) {
+                      console.warn('Next.js static resource failed to load, reloading page:', url);
+                      window.location.reload();
+                    }
+                  }
+                }, true);
+
+                // 2. Intercept unhandled dynamic import rejections
+                window.addEventListener('unhandledrejection', function(event) {
+                  var message = event.reason && event.reason.message ? event.reason.message : '';
+                  if (
+                    message.indexOf('ChunkLoadError') !== -1 ||
+                    message.indexOf('Loading chunk') !== -1 ||
+                    message.indexOf('Failed to fetch dynamically imported module') !== -1 ||
+                    message.indexOf('dynamic import') !== -1
+                  ) {
+                    console.warn('Dynamic import chunk load failure detected, reloading page:', message);
+                    window.location.reload();
+                  }
+                });
+
+                // 3. Immediately unregister any lingering service workers to avoid 304 cache issues
+                if ('serviceWorker' in navigator) {
+                  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    for (var i = 0; i < registrations.length; i++) {
+                      registrations[i].unregister().then(function(success) {
+                        if (success) {
+                          console.log('Successfully unregistered lingering Service Worker');
+                        }
+                      });
+                    }
+                  }).catch(function(err) {
+                    console.error('Error fetching service worker registrations:', err);
+                  });
+                }
+              })();
+            `
+          }}
+        />
+      </head>
       <body className="min-h-screen bg-gray-50">
         <PostHogProvider>
           <AuthProvider>
