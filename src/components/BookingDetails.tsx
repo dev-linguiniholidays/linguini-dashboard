@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Booking, Expense } from '@/lib/types';
+import { Booking, Expense, Payment } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,6 +22,8 @@ interface BookingDetailsProps {
   onAddComment: (bookingId: string, text: string) => void;
   onAddExpense?: (bookingId: string, amount: number, category: Expense['category'], description: string) => Promise<void>;
   onDeleteExpense?: (bookingId: string, expenseId: string) => Promise<void>;
+  onAddPayment?: (bookingId: string, amount: number, tag: Payment['tag'], description: string) => Promise<void>;
+  onDeletePayment?: (bookingId: string, paymentId: string) => Promise<void>;
   isLoading?: boolean;
   assigneeOptions?: string[];
   commentMode?: boolean;
@@ -66,6 +68,14 @@ const categoryColors: Record<string, string> = {
   'Misc.': 'bg-gray-50 text-gray-700 border-gray-200',
 };
 
+const tagColors: Record<Payment['tag'], string> = {
+  Cash: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  UPI: 'bg-blue-50 text-blue-700 border-blue-200',
+  Card: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  'Net Banking': 'bg-purple-50 text-purple-700 border-purple-200',
+  Other: 'bg-gray-50 text-gray-700 border-gray-200',
+};
+
 const getAssigneeColor = (assignee: string): string => {
   const colors = [
     'bg-gray-100 text-gray-800',
@@ -96,6 +106,8 @@ export const BookingDetails = ({
   onAddComment,
   onAddExpense,
   onDeleteExpense,
+  onAddPayment,
+  onDeletePayment,
   isLoading = false,
   assigneeOptions = [],
   commentMode = false,
@@ -122,6 +134,11 @@ export const BookingDetails = ({
   const [expenseCategory, setExpenseCategory] = useState<Expense['category']>('Hotel');
   const [expenseDescription, setExpenseDescription] = useState('');
   const [isAddingExpense, setIsAddingExpense] = useState(false);
+
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentTag, setPaymentTag] = useState<Payment['tag']>('UPI');
+  const [paymentDescription, setPaymentDescription] = useState('');
+  const [isAddingPayment, setIsAddingPayment] = useState(false);
 
   const handlePhoneChange = (value: string) => {
     let cleanValue = value.replace(/[^\d+]/g, '');
@@ -245,6 +262,50 @@ export const BookingDetails = ({
     }
   };
 
+  const handleAddPayment = async () => {
+    const amt = parseFloat(paymentAmount);
+    if (isNaN(amt) || amt <= 0) {
+      toast.error('Please enter a valid payment amount');
+      return;
+    }
+    if (onAddPayment) {
+      setIsAddingPayment(true);
+      try {
+        await onAddPayment(booking.id, amt, paymentTag, paymentDescription.trim());
+        setPaymentAmount('');
+        setPaymentDescription('');
+        toast.success('Payment logged successfully!', {
+          style: {
+            backgroundColor: '#10b981',
+            color: 'white',
+            border: 'none',
+          },
+        });
+      } catch {
+        toast.error('Failed to log payment');
+      } finally {
+        setIsAddingPayment(false);
+      }
+    }
+  };
+
+  const handleDeletePayment = async (paymentId: string) => {
+    if (onDeletePayment) {
+      try {
+        await onDeletePayment(booking.id, paymentId);
+        toast.success('Payment deleted successfully!', {
+          style: {
+            backgroundColor: '#10b981',
+            color: 'white',
+            border: 'none',
+          },
+        });
+      } catch {
+        toast.error('Failed to delete payment');
+      }
+    }
+  };
+
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
       upcoming: 'Upcoming',
@@ -291,6 +352,9 @@ export const BookingDetails = ({
   const editable = canEditBooking();
   const expenses = booking.expenses || [];
   const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+  const payments = booking.payments || [];
+  const totalPayments = payments.reduce((sum, pay) => sum + pay.amount, 0);
+  const pendingAmount = (booking.packageCost || 0) - totalPayments;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -536,10 +600,33 @@ export const BookingDetails = ({
                   min="0"
                   value={formData.packageCost}
                   onChange={(e) => setFormData(prev => ({ ...prev, packageCost: parseFloat(e.target.value) || 0 }))}
+                  onFocus={(e) => e.target.select()}
                 />
               ) : (
-                <p className="text-sm font-semibold text-gray-900">₹{(booking.packageCost || 0).toLocaleString('en-IN')}</p>
+                <p className="text-sm font-semibold text-gray-900 bg-gray-50 p-2.5 rounded-lg border border-gray-100">₹{(booking.packageCost || 0).toLocaleString('en-IN')}</p>
               )}
+            </div>
+
+            {/* Total Payments */}
+            <div className="space-y-2">
+              <Label>Total Paid (₹)</Label>
+              <p className="text-sm font-semibold text-emerald-700 bg-emerald-50/50 p-2.5 border border-emerald-100 rounded-lg">₹{totalPayments.toLocaleString('en-IN')}</p>
+            </div>
+
+            {/* Pending Amount */}
+            <div className="space-y-2">
+              <Label>Pending Amount (₹)</Label>
+              <p className={`text-sm font-bold p-2.5 border rounded-lg ${pendingAmount > 0 ? 'text-amber-700 bg-amber-50/50 border-amber-100' : 'text-emerald-700 bg-emerald-50/50 border-emerald-100'}`}>
+                ₹{pendingAmount.toLocaleString('en-IN')}
+              </p>
+            </div>
+
+            {/* Profit/Loss */}
+            <div className="space-y-2">
+              <Label>Profit / Loss (₹)</Label>
+              <p className={`text-sm font-bold p-2.5 border rounded-lg ${booking.profit >= 0 ? 'text-emerald-700 bg-emerald-50/50 border-emerald-100' : 'text-red-700 bg-red-50/50 border-red-100'}`}>
+                ₹{(booking.profit || 0).toLocaleString('en-IN')}
+              </p>
             </div>
           </div>
 
@@ -557,8 +644,8 @@ export const BookingDetails = ({
             )}
           </div>
 
-          {/* Side by side log: Comments & Tagged Expenses */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
+          {/* Side by side log: Comments, Tagged Expenses, & Tagged Payments */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 border-t pt-6">
             {/* Comments Section */}
             <div className="space-y-4">
               <div className="flex items-center gap-2">
@@ -598,6 +685,112 @@ export const BookingDetails = ({
                         </div>
                       </div>
                       <p className="text-sm text-gray-700">{comment.text}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Tagged Payments Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Receipt className="h-5 w-5 text-gray-500" />
+                  <h3 className="text-lg font-semibold">Payments Log</h3>
+                </div>
+                <div className="text-sm font-semibold bg-emerald-55 text-emerald-700 px-3 py-1 rounded-full border border-emerald-200 shadow-sm">
+                  Total: ₹{totalPayments.toLocaleString('en-IN')}
+                </div>
+              </div>
+
+              {/* Add Payment (Admin/Superadmin only) */}
+              {editable && (
+                <div className="space-y-2 border rounded-lg p-3 bg-gray-50/50">
+                  <span className="text-xs font-semibold text-gray-500">Log New Payment</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Input
+                        type="number"
+                        placeholder="Amount (₹)"
+                        value={paymentAmount}
+                        onChange={(e) => setPaymentAmount(e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+                    <div>
+                      <Select
+                        value={paymentTag}
+                        onValueChange={(val) => setPaymentTag(val as typeof paymentTag)}
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue placeholder="Method" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Cash">Cash</SelectItem>
+                          <SelectItem value="UPI">UPI</SelectItem>
+                          <SelectItem value="Card">Card</SelectItem>
+                          <SelectItem value="Net Banking">Net Banking</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Payment description/notes..."
+                      value={paymentDescription}
+                      onChange={(e) => setPaymentDescription(e.target.value)}
+                      className="h-9 flex-1"
+                    />
+                    <Button 
+                      size="sm" 
+                      onClick={handleAddPayment} 
+                      disabled={isAddingPayment || !paymentAmount.trim()}
+                      className="h-9 px-3 bg-emerald-600 hover:bg-emerald-700 text-white"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Payments List */}
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                {payments.length === 0 ? (
+                  <p className="text-sm text-gray-500 italic py-2">No payments logged yet</p>
+                ) : (
+                  [...payments].reverse().map((payment) => (
+                    <div key={payment.id} className="flex items-center justify-between border rounded-lg p-2.5 bg-white shadow-sm hover:border-gray-300 transition-colors">
+                      <div className="space-y-1 flex-1 min-w-0 pr-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${tagColors[payment.tag] || 'bg-gray-100 text-gray-700'}`}>
+                            {payment.tag}
+                          </span>
+                          <span className="font-semibold text-sm text-gray-900">
+                            ₹{payment.amount.toLocaleString('en-IN')}
+                          </span>
+                        </div>
+                        {payment.description && (
+                          <p className="text-xs text-gray-600 truncate" title={payment.description}>
+                            {payment.description}
+                          </p>
+                        )}
+                        <p className="text-[10px] text-gray-400">
+                          Logged by {payment.userName} on {formatDateTime(payment.timestamp)}
+                        </p>
+                      </div>
+                      {editable && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full flex-shrink-0"
+                          onClick={() => handleDeletePayment(payment.id)}
+                          title="Delete Payment"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   ))
                 )}

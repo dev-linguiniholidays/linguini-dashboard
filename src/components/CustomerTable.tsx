@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, Edit, Trash2, MessageSquare, Eye, Lock, Check } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, MessageSquare, Eye, Lock, Unlock, Check } from 'lucide-react';
 import { RoleGuard } from './RoleGuard';
 import { displayValue } from '@/lib/displayUtils';
 import { canEditCustomer, canConfirmBooking } from '@/lib/roleUtils';
@@ -34,6 +34,7 @@ interface CustomerTableProps {
   onAssigneeFilterChange: (assignee: string) => void;
   onViewComments: (customer: Customer) => void;
   onLock?: (id: string) => void;
+  onUnlock?: (id: string) => void;
   onConfirmBooking?: (id: string) => void;
   destinationOptions?: string[];
   assigneeOptions?: string[];
@@ -115,6 +116,7 @@ export const CustomerTable = ({
   onAssigneeFilterChange,
   onViewComments,
   onLock,
+  onUnlock,
   onConfirmBooking,
   destinationOptions = [],
   assigneeOptions = [],
@@ -323,6 +325,7 @@ export const CustomerTable = ({
               <TableHead>Pax</TableHead>
               <TableHead>Lead Type</TableHead>
               <TableHead>Service</TableHead>
+              <TableHead>Package Cost</TableHead>
               <TableHead>Comments</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -372,6 +375,9 @@ export const CustomerTable = ({
                     {getServiceLabel(customer.service)}
                   </Badge>
                 </TableCell>
+                <TableCell className="font-semibold text-gray-900">
+                  ₹{(customer.packageCost || 0).toLocaleString('en-IN')}
+                </TableCell>
                 <TableCell>
                   <Button
                     variant="outline"
@@ -405,27 +411,38 @@ export const CustomerTable = ({
                       </Button>
                     )}
                     {customer.isLocked && (
-                      canConfirmBooking() ? (
+                      <>
+                        {canConfirmBooking() ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onConfirmBooking && onConfirmBooking(customer.id)}
+                            title="Confirm & Move to Booking"
+                            className="bg-green-50 border-green-200 text-green-750 hover:bg-green-100 hover:text-green-800"
+                          >
+                            <Check className="h-3 w-3" />
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled
+                            title="Awaiting Admin Confirmation"
+                            className="bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed"
+                          >
+                            <Lock className="h-3 w-3" />
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => onConfirmBooking && onConfirmBooking(customer.id)}
-                          title="Confirm & Move to Booking"
-                          className="bg-green-50 border-green-200 text-green-750 hover:bg-green-100 hover:text-green-800"
+                          onClick={() => onUnlock && onUnlock(customer.id)}
+                          title="Undo Punch In (Unlock)"
+                          className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
                         >
-                          <Check className="h-3 w-3" />
+                          <Unlock className="h-3 w-3" />
                         </Button>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled
-                          title="Awaiting Admin Confirmation"
-                          className="bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed"
-                        >
-                          <Lock className="h-3 w-3" />
-                        </Button>
-                      )
+                      </>
                     )}
                     {canEditCustomer(customer) && (
                       <Button

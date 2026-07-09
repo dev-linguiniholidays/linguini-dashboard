@@ -29,7 +29,8 @@ CREATE TABLE IF NOT EXISTS public.customers (
   service TEXT CHECK (service IN ('tour-package', 'flight', 'train', 'visa', 'group-departure', 'bus', 'cab', 'hotel')) NOT NULL DEFAULT 'tour-package',
   assignee TEXT NOT NULL DEFAULT 'none',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  package_cost NUMERIC NOT NULL DEFAULT 0
 );
 
 -- 3. Create public.customer_comments Table
@@ -223,3 +224,89 @@ CREATE POLICY "Allow all actions for admins and superadmins on booking expenses"
 -- 9. Remove package_type column from customers and bookings tables
 ALTER TABLE public.customers DROP COLUMN IF EXISTS package_type;
 ALTER TABLE public.bookings DROP COLUMN IF EXISTS package_type;
+
+-- 10. Add package_cost column to customers table if not exists
+ALTER TABLE public.customers ADD COLUMN IF NOT EXISTS package_cost NUMERIC NOT NULL DEFAULT 0;
+
+-- 11. Create public.booking_payments Table
+CREATE TABLE IF NOT EXISTS public.booking_payments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  booking_id UUID REFERENCES public.bookings(id) ON DELETE CASCADE NOT NULL,
+  amount NUMERIC NOT NULL CHECK (amount >= 0),
+  tag TEXT CHECK (tag IN ('Cash', 'UPI', 'Card', 'Net Banking', 'Other')) NOT NULL,
+  description TEXT,
+  user_id TEXT NOT NULL,
+  user_name TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Enable RLS
+ALTER TABLE public.booking_payments ENABLE ROW LEVEL SECURITY;
+
+-- booking_payments policies
+DROP POLICY IF EXISTS "Allow read access to all authenticated users on booking payments table" ON public.booking_payments;
+CREATE POLICY "Allow read access to all authenticated users on booking payments table"
+  ON public.booking_payments FOR SELECT
+  TO authenticated
+  USING (true);
+
+DROP POLICY IF EXISTS "Allow all actions for admins and superadmins on booking payments" ON public.booking_payments;
+CREATE POLICY "Allow all actions for admins and superadmins on booking payments"
+  ON public.booking_payments FOR ALL
+  TO authenticated
+  USING ((SELECT role FROM public.users WHERE id = auth.uid()) IN ('admin', 'superadmin'))
+  WITH CHECK ((SELECT role FROM public.users WHERE id = auth.uid()) IN ('admin', 'superadmin'));
+
+-- 12. Add profit column to bookings and automate calculations using Triggers
+ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS profit NUMERIC NOT NULL DEFAULT 0;
+
+-- Initialize existing bookings profit column
+UPDATE public.bookings b
+SET profit = COALESCE(b.package_cost, 0) - (
+  SELECT COALESCE(SUM(amount), 0)
+  FROM public.booking_expenses e
+  WHERE e.booking_id = b.id
+);
+
+-- Trigger function to update booking profit when expenses are modified
+CREATE OR REPLACE FUNCTION public.update_booking_profit()
+RETURNS TRIGGER AS $$
+DECLARE
+  target_booking_id UUID;
+BEGIN
+  target_booking_id := COALESCE(NEW.booking_id, OLD.booking_id);
+  
+  UPDATE public.bookings
+  SET profit = COALESCE(package_cost, 0) - (
+    SELECT COALESCE(SUM(amount), 0)
+    FROM public.booking_expenses
+    WHERE booking_id = target_booking_id
+  )
+  WHERE id = target_booking_id;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS update_booking_profit_trigger ON public.booking_expenses;
+CREATE TRIGGER update_booking_profit_trigger
+  AFTER INSERT OR UPDATE OR DELETE ON public.booking_expenses
+  FOR EACH ROW EXECUTE FUNCTION public.update_booking_profit();
+
+-- Trigger function to update booking profit when package_cost is modified
+CREATE OR REPLACE FUNCTION public.calculate_booking_profit_on_cost_update()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.profit := COALESCE(NEW.package_cost, 0) - (
+    SELECT COALESCE(SUM(amount), 0)
+    FROM public.booking_expenses
+    WHERE booking_id = NEW.id
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS calculate_booking_profit_trigger ON public.bookings;
+CREATE TRIGGER calculate_booking_profit_trigger
+  BEFORE INSERT OR UPDATE ON public.bookings
+  FOR EACH ROW EXECUTE FUNCTION public.calculate_booking_profit_on_cost_update();

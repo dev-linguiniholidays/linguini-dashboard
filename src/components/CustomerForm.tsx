@@ -44,6 +44,7 @@ export const CustomerForm = ({
     leadType: 'calling' as Customer['leadType'],
     service: 'tour-package' as Customer['service'],
     assignee: 'none' as Customer['assignee'],
+    packageCost: 0 as number | string,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -63,6 +64,7 @@ export const CustomerForm = ({
         leadType: customer.leadType,
         service: customer.service,
         assignee: customer.assignee,
+        packageCost: customer.packageCost || 0,
       });
     } else {
       setFormData({
@@ -78,6 +80,7 @@ export const CustomerForm = ({
         leadType: 'calling',
         service: 'tour-package',
         assignee: 'none',
+        packageCost: 0,
       });
     }
     setErrors({});
@@ -130,6 +133,7 @@ export const CustomerForm = ({
     const customerData = {
       ...formData,
       numberOfPax: typeof formData.numberOfPax === 'string' ? parseInt(formData.numberOfPax) : formData.numberOfPax,
+      packageCost: formData.packageCost === '' ? 0 : (typeof formData.packageCost === 'string' ? parseFloat(formData.packageCost) || 0 : formData.packageCost),
       leadCreationDate: new Date(formData.leadCreationDate).toISOString(),
     };
 
@@ -376,6 +380,29 @@ export const CustomerForm = ({
                 )}
               </div>
             )}
+
+            <div className="space-y-2">
+              <Label htmlFor="packageCost">Package Cost (₹)</Label>
+              <Input
+                id="packageCost"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={formData.packageCost}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === '') {
+                    handleInputChange('packageCost', '');
+                  } else {
+                    const numValue = parseFloat(value);
+                    if (!isNaN(numValue)) {
+                      handleInputChange('packageCost', numValue);
+                    }
+                  }
+                }}
+                onFocus={(e) => e.target.select()}
+              />
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="leadCreationDate">Lead Creation Date</Label>

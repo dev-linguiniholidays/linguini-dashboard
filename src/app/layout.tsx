@@ -5,14 +5,21 @@ import { Sidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
+import { PostHogProvider } from '@/components/PostHogProvider';
 import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
 import { useState } from 'react';
+import posthog from 'posthog-js';
 import './globals.css';
 
 function AppContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isLoginPage = pathname === '/login';
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    posthog.capture('$pageview');
+  }, [pathname]);
 
   if (isLoginPage) {
     return <>{children}</>;
@@ -55,10 +62,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-gray-50">
-        <AuthProvider>
-          <AppContent>{children}</AppContent>
-          <Toaster />
-        </AuthProvider>
+        <PostHogProvider>
+          <AuthProvider>
+            <AppContent>{children}</AppContent>
+            <Toaster />
+          </AuthProvider>
+        </PostHogProvider>
       </body>
     </html>
   );

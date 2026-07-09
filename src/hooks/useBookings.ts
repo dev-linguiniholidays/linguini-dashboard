@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Booking, Comment, Expense } from '@/lib/types';
-import { bookingService, bookingCommentService, bookingExpenseService, convertDbBookingToFrontend, convertFrontendBookingToDb, convertPartialFrontendBookingToDb, customerService } from '@/lib/database';
+import { Booking, Comment, Expense, Payment } from '@/lib/types';
+import { bookingService, bookingCommentService, bookingExpenseService, bookingPaymentService, convertDbBookingToFrontend, convertFrontendBookingToDb, convertPartialFrontendBookingToDb, customerService } from '@/lib/database';
 import { supabase } from '@/lib/supabase';
 
 export const useBookings = () => {
@@ -19,9 +19,10 @@ export const useBookings = () => {
           
           const bookingsWithCommentsAndExpenses = await Promise.all(
             frontendBookings.map(async (booking) => {
-              const [comments, expenses] = await Promise.all([
+              const [comments, expenses, payments] = await Promise.all([
                 bookingCommentService.getByBookingId(booking.id),
-                bookingExpenseService.getByBookingId(booking.id)
+                bookingExpenseService.getByBookingId(booking.id),
+                bookingPaymentService.getByBookingId(booking.id)
               ]);
               return {
                 ...booking,
@@ -32,7 +33,8 @@ export const useBookings = () => {
                   userName: comment.user_name,
                   timestamp: comment.created_at,
                 })),
-                expenses
+                expenses,
+                payments
               };
             })
           );
@@ -69,7 +71,7 @@ export const useBookings = () => {
     loadBookings();
   }, []);
 
-  const addBooking = async (newBooking: Omit<Booking, 'id' | 'updatedAt' | 'comments' | 'expenses'>) => {
+  const addBooking = async (newBooking: Omit<Booking, 'id' | 'updatedAt' | 'comments' | 'expenses' | 'payments'>) => {
     try {
       if (supabase) {
         const dbBooking = convertFrontendBookingToDb(newBooking);
@@ -83,6 +85,8 @@ export const useBookings = () => {
           updatedAt: new Date().toISOString(),
           comments: [],
           expenses: [],
+          payments: [],
+          profit: newBooking.packageCost || 0,
         };
         setBookings(prev => [...prev, booking]);
       }
@@ -100,15 +104,19 @@ export const useBookings = () => {
         const frontendBooking = convertDbBookingToFrontend(updatedBooking);
         setBookings(prev => prev.map(b => 
           b.id === id 
-            ? { ...frontendBooking, comments: b.comments, expenses: b.expenses }
+            ? { ...frontendBooking, comments: b.comments, expenses: b.expenses, payments: b.payments }
             : b
         ));
       } else {
-        setBookings(prev => prev.map(b => 
-          b.id === id 
-            ? { ...b, ...updates, updatedAt: new Date().toISOString() }
-            : b
-        ));
+        setBookings(prev => prev.map(b => {
+          if (b.id === id) {
+            const merged = { ...b, ...updates, updatedAt: new Date().toISOString() };
+            const totalExp = (merged.expenses || []).reduce((sum, exp) => sum + exp.amount, 0);
+            merged.profit = (merged.packageCost || 0) - totalExp;
+            return merged;
+          }
+          return b;
+        }));
       }
     } catch (error) {
       console.error('Error updating booking:', error);
@@ -202,11 +210,18 @@ export const useBookings = () => {
           user_name: userName,
         });
 
-        setBookings(prev => prev.map(booking =>
-          booking.id === bookingId
-            ? { ...booking, expenses: [...booking.expenses, expense] }
-            : booking
-        ));
+        setBookings(prev => prev.map(booking => {
+          if (booking.id === bookingId) {
+            const updatedExpenses = [...booking.expenses, expense];
+            const totalExp = updatedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+            return {
+              ...booking,
+              expenses: updatedExpenses,
+              profit: (booking.packageCost || 0) - totalExp,
+            };
+          }
+          return booking;
+        }));
       } else {
         const newExpense: Expense = {
           id: Date.now().toString(),
@@ -218,11 +233,19 @@ export const useBookings = () => {
           timestamp: new Date().toISOString(),
         };
 
-        setBookings(prev => prev.map(booking =>
-          booking.id === bookingId
-            ? { ...booking, expenses: [...booking.expenses, newExpense], updatedAt: new Date().toISOString() }
-            : booking
-        ));
+        setBookings(prev => prev.map(booking => {
+          if (booking.id === bookingId) {
+            const updatedExpenses = [...booking.expenses, newExpense];
+            const totalExp = updatedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+            return {
+              ...booking,
+              expenses: updatedExpenses,
+              profit: (booking.packageCost || 0) - totalExp,
+              updatedAt: new Date().toISOString()
+            };
+          }
+          return booking;
+        }));
       }
     } catch (error) {
       console.error('Error adding expense:', error);
@@ -235,13 +258,83 @@ export const useBookings = () => {
       if (supabase) {
         await bookingExpenseService.delete(expenseId);
       }
+      setBookings(prev => prev.map(booking => {
+        if (booking.id === bookingId) {
+          const updatedExpenses = booking.expenses.filter(e => e.id !== expenseId);
+          const totalExp = updatedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+          return {
+            ...booking,
+            expenses: updatedExpenses,
+            profit: (booking.packageCost || 0) - totalExp
+          };
+        }
+        return booking;
+      }));
+    } catch (error) {
+      console.error('Error deleting expense:', error);
+      throw error;
+    }
+  };
+
+  const addPayment = async (
+    bookingId: string,
+    amount: number,
+    tag: Payment['tag'],
+    description: string,
+    userId: string,
+    userName: string
+  ) => {
+    try {
+      if (supabase) {
+        const payment = await bookingPaymentService.add({
+          booking_id: bookingId,
+          amount,
+          tag,
+          description,
+          user_id: userId,
+          user_name: userName,
+        });
+
+        setBookings(prev => prev.map(booking =>
+          booking.id === bookingId
+            ? { ...booking, payments: [...booking.payments, payment] }
+            : booking
+        ));
+      } else {
+        const newPayment: Payment = {
+          id: Date.now().toString(),
+          amount,
+          tag,
+          description,
+          userId,
+          userName,
+          timestamp: new Date().toISOString(),
+        };
+
+        setBookings(prev => prev.map(booking =>
+          booking.id === bookingId
+            ? { ...booking, payments: [...booking.payments, newPayment], updatedAt: new Date().toISOString() }
+            : booking
+        ));
+      }
+    } catch (error) {
+      console.error('Error adding payment:', error);
+      throw error;
+    }
+  };
+
+  const deletePayment = async (bookingId: string, paymentId: string) => {
+    try {
+      if (supabase) {
+        await bookingPaymentService.delete(paymentId);
+      }
       setBookings(prev => prev.map(booking =>
         booking.id === bookingId
-          ? { ...booking, expenses: booking.expenses.filter(e => e.id !== expenseId) }
+          ? { ...booking, payments: booking.payments.filter(p => p.id !== paymentId) }
           : booking
       ));
     } catch (error) {
-      console.error('Error deleting expense:', error);
+      console.error('Error deleting payment:', error);
       throw error;
     }
   };
@@ -256,6 +349,8 @@ export const useBookings = () => {
     addComment,
     addExpense,
     deleteExpense,
+    addPayment,
+    deletePayment,
     destinationOptions,
     assigneeOptions,
   };
@@ -306,9 +401,10 @@ export const useBookingSearch = (bookings: Booking[], destinationOptions: string
           
           const resultsWithCommentsAndExpenses = await Promise.all(
             frontendResults.map(async (booking) => {
-              const [comments, expenses] = await Promise.all([
+              const [comments, expenses, payments] = await Promise.all([
                 bookingCommentService.getByBookingId(booking.id),
-                bookingExpenseService.getByBookingId(booking.id)
+                bookingExpenseService.getByBookingId(booking.id),
+                bookingPaymentService.getByBookingId(booking.id)
               ]);
               return {
                 ...booking,
@@ -319,7 +415,8 @@ export const useBookingSearch = (bookings: Booking[], destinationOptions: string
                   userName: comment.user_name,
                   timestamp: comment.created_at,
                 })),
-                expenses
+                expenses,
+                payments
               };
             })
           );

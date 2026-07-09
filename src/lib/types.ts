@@ -23,12 +23,23 @@ export interface Customer {
   comments: Comment[];
   updatedAt: string;
   isLocked: boolean;
+  packageCost: number;
 }
 
 export interface Expense {
   id: string;
   amount: number;
   category: 'Hotel' | 'Taxi' | 'Bus' | 'Guide' | 'Travel Hamper' | 'Medical Kit' | 'Misc.';
+  description: string;
+  userId: string;
+  userName: string;
+  timestamp: string;
+}
+
+export interface Payment {
+  id: string;
+  amount: number;
+  tag: 'Cash' | 'UPI' | 'Card' | 'Net Banking' | 'Other';
   description: string;
   userId: string;
   userName: string;
@@ -54,5 +65,7 @@ export interface Booking {
   updatedAt: string;
   packageCost: number;
   expenses: Expense[];
+  payments: Payment[];
+  profit: number;
 }
 

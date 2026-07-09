@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 
 export default function CustomersPage() {
   const router = useRouter();
-  const { customers: allCustomers, addCustomer, deleteCustomer, lockCustomer, confirmBooking, isLoading, destinationOptions, assigneeOptions } = useCustomers();
+  const { customers: allCustomers, addCustomer, deleteCustomer, lockCustomer, unlockCustomer, confirmBooking, isLoading, destinationOptions, assigneeOptions } = useCustomers();
   const {
     customers,
     searchTerm,
@@ -112,6 +112,7 @@ export default function CustomersPage() {
           onAssigneeFilterChange={setAssigneeFilter}
           onViewComments={handleViewComments}
           onLock={lockCustomer}
+          onUnlock={unlockCustomer}
           onConfirmBooking={confirmBooking}
           destinationOptions={searchDestinationOptions}
           assigneeOptions={searchAssigneeOptions}

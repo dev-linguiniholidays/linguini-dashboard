@@ -30,6 +30,7 @@ export interface Database {
           created_at: string
           updated_at: string
           is_locked: boolean
+          package_cost: number
         }
         Insert: {
           id?: string
@@ -48,6 +49,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
           is_locked?: boolean
+          package_cost?: number
         }
         Update: {
           id?: string
@@ -66,6 +68,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
           is_locked?: boolean
+          package_cost?: number
         }
       }
       bookings: {
@@ -87,6 +90,7 @@ export interface Database {
           created_at: string
           updated_at: string
           package_cost: number
+          profit: number
         }
         Insert: {
           id?: string
@@ -106,6 +110,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
           package_cost?: number
+          profit?: number
         }
         Update: {
           id?: string
@@ -125,6 +130,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
           package_cost?: number
+          profit?: number
         }
       }
       customer_comments: {
@@ -205,6 +211,38 @@ export interface Database {
           booking_id?: string
           amount?: number
           category?: 'Hotel' | 'Taxi' | 'Bus' | 'Guide' | 'Travel Hamper' | 'Medical Kit' | 'Misc.'
+          description?: string | null
+          user_id?: string
+          user_name?: string
+          created_at?: string
+        }
+      }
+      booking_payments: {
+        Row: {
+          id: string
+          booking_id: string
+          amount: number
+          tag: 'Cash' | 'UPI' | 'Card' | 'Net Banking' | 'Other'
+          description: string | null
+          user_id: string
+          user_name: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          booking_id: string
+          amount: number
+          tag: 'Cash' | 'UPI' | 'Card' | 'Net Banking' | 'Other'
+          description?: string | null
+          user_id: string
+          user_name: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          booking_id?: string
+          amount?: number
+          tag?: 'Cash' | 'UPI' | 'Card' | 'Net Banking' | 'Other'
           description?: string | null
           user_id?: string
           user_name?: string

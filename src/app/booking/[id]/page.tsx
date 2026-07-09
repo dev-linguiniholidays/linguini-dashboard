@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
-import { Booking, Expense } from '@/lib/types';
+import { Booking, Expense, Payment } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,6 +56,14 @@ const categoryColors: Record<string, string> = {
   'Misc.': 'bg-gray-50 text-gray-700 border-gray-200',
 };
 
+const tagColors: Record<Payment['tag'], string> = {
+  Cash: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  UPI: 'bg-blue-50 text-blue-700 border-blue-200',
+  Card: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  'Net Banking': 'bg-purple-50 text-purple-700 border-purple-200',
+  Other: 'bg-gray-50 text-gray-700 border-gray-200',
+};
+
 const getAssigneeColor = (assignee: string): string => {
   const colors = [
     'bg-gray-100 text-gray-800',
@@ -90,6 +98,8 @@ export default function BookingDetailPage() {
     addComment, 
     addExpense,
     deleteExpense,
+    addPayment,
+    deletePayment,
     isLoading, 
     assigneeOptions = [] 
   } = useBookings();
@@ -119,6 +129,11 @@ export default function BookingDetailPage() {
   const [expenseCategory, setExpenseCategory] = useState<Expense['category']>('Hotel');
   const [expenseDescription, setExpenseDescription] = useState('');
   const [isAddingExpense, setIsAddingExpense] = useState(false);
+  
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentTag, setPaymentTag] = useState<Payment['tag']>('UPI');
+  const [paymentDescription, setPaymentDescription] = useState('');
+  const [isAddingPayment, setIsAddingPayment] = useState(false);
   
   const commentsRef = useRef<HTMLDivElement>(null);
 
@@ -304,6 +319,54 @@ export default function BookingDetailPage() {
     }
   };
 
+  const handleAddPayment = async () => {
+    if (!user) return;
+    const amt = parseFloat(paymentAmount);
+    if (isNaN(amt) || amt <= 0) {
+      toast.error('Please enter a valid payment amount');
+      return;
+    }
+    setIsAddingPayment(true);
+    try {
+      await addPayment(
+        bookingId,
+        amt,
+        paymentTag,
+        paymentDescription.trim(),
+        user.id,
+        typeof window !== 'undefined' ? localStorage.getItem('user-name') || 'User' : 'User'
+      );
+      setPaymentAmount('');
+      setPaymentDescription('');
+      toast.success('Payment logged successfully!', {
+        style: {
+          backgroundColor: '#10b981',
+          color: 'white',
+          border: 'none',
+        },
+      });
+    } catch {
+      toast.error('Failed to log payment');
+    } finally {
+      setIsAddingPayment(false);
+    }
+  };
+
+  const handleDeletePayment = async (paymentId: string) => {
+    try {
+      await deletePayment(bookingId, paymentId);
+      toast.success('Payment deleted successfully!', {
+        style: {
+          backgroundColor: '#10b981',
+          color: 'white',
+          border: 'none',
+        },
+      });
+    } catch {
+      toast.error('Failed to delete payment');
+    }
+  };
+
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
       upcoming: 'Upcoming',
@@ -350,6 +413,9 @@ export default function BookingDetailPage() {
   const editable = canEditBooking();
   const expenses = booking.expenses || [];
   const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+  const payments = booking.payments || [];
+  const totalPayments = payments.reduce((sum, pay) => sum + pay.amount, 0);
+  const pendingAmount = (booking.packageCost || 0) - totalPayments;
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -588,6 +654,7 @@ export default function BookingDetailPage() {
                     min="0"
                     value={formData.packageCost}
                     onChange={(e) => setFormData(prev => ({ ...prev, packageCost: parseFloat(e.target.value) || 0 }))}
+                    onFocus={(e) => e.target.select()}
                   />
                 ) : (
                   <p className="text-sm font-semibold text-gray-900 bg-gray-50 p-2.5 rounded-lg border border-gray-100">
@@ -625,6 +692,28 @@ export default function BookingDetailPage() {
                     </Badge>
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Payment & Profit Summary Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-gray-100">
+              <div className="space-y-2">
+                <Label>Total Paid</Label>
+                <p className="text-sm font-semibold text-emerald-700 bg-emerald-50/50 p-2.5 rounded-lg border border-emerald-100">
+                  ₹{totalPayments.toLocaleString('en-IN')}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label>Pending Amount</Label>
+                <p className={`text-sm font-bold p-2.5 border rounded-lg ${pendingAmount > 0 ? 'text-amber-700 bg-amber-50/50 border-amber-100' : 'text-emerald-700 bg-emerald-50/50 border-emerald-100'}`}>
+                  ₹{pendingAmount.toLocaleString('en-IN')}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label>Profit / Loss</Label>
+                <p className={`text-sm font-bold p-2.5 border rounded-lg ${booking.profit >= 0 ? 'text-emerald-700 bg-emerald-50/50 border-emerald-100' : 'text-red-700 bg-red-50/50 border-red-100'}`}>
+                  ₹{(booking.profit || 0).toLocaleString('en-IN')}
+                </p>
               </div>
             </div>
 
@@ -681,6 +770,109 @@ export default function BookingDetailPage() {
                 </Badge>
               )}
             </div>
+          </div>
+
+          {/* Tagged Payments Section */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col h-[400px]">
+            <div className="flex items-center justify-between border-b pb-3 mb-4 shrink-0">
+              <div className="flex items-center gap-2">
+                <Receipt className="h-5 w-5 text-gray-500" />
+                <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wider">Payments</h3>
+              </div>
+              <div className="text-xs font-semibold bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full border border-emerald-200 shadow-sm">
+                Total Paid: ₹{totalPayments.toLocaleString('en-IN')}
+              </div>
+            </div>
+
+            {/* Payments List */}
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1 mb-4">
+              {payments.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-center text-gray-400 italic text-xs py-8">
+                  No payments logged yet.
+                </div>
+              ) : (
+                [...payments].reverse().map((payment) => (
+                  <div key={payment.id} className="flex items-center justify-between border border-gray-100 rounded-lg p-2.5 bg-white shadow-sm hover:border-gray-300 transition-colors">
+                    <div className="space-y-1 flex-1 min-w-0 pr-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${tagColors[payment.tag] || 'bg-gray-100 text-gray-700'}`}>
+                          {payment.tag}
+                        </span>
+                        <span className="font-semibold text-xs text-gray-900">
+                          ₹{payment.amount.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                      {payment.description && (
+                        <p className="text-[10px] text-gray-600 truncate" title={payment.description}>
+                          {payment.description}
+                        </p>
+                      )}
+                      <p className="text-[9px] text-gray-400">
+                        Logged by {payment.userName} on {formatDateTime(payment.timestamp)}
+                      </p>
+                    </div>
+                    {editable && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full flex-shrink-0"
+                        onClick={() => handleDeletePayment(payment.id)}
+                        title="Delete Payment"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Add Payment (Admin/Superadmin only) */}
+            {editable && (
+              <div className="shrink-0 border-t border-gray-100 pt-3 space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Amount (₹)"
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(e.target.value)}
+                    className="h-8 text-xs"
+                  />
+                  <Select
+                    value={paymentTag}
+                    onValueChange={(val) => setPaymentTag(val as typeof paymentTag)}
+                  >
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Cash">Cash</SelectItem>
+                      <SelectItem value="UPI">UPI</SelectItem>
+                      <SelectItem value="Card">Card</SelectItem>
+                      <SelectItem value="Net Banking">Net Banking</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Payment notes..."
+                    value={paymentDescription}
+                    onChange={(e) => setPaymentDescription(e.target.value)}
+                    className="h-8 text-xs flex-1"
+                  />
+                  <Button 
+                    size="sm" 
+                    onClick={handleAddPayment} 
+                    disabled={isAddingPayment || !paymentAmount.trim()}
+                    className="h-8 px-3 text-xs bg-emerald-600 hover:bg-emerald-750 text-white"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Tagged Expenses Section */}

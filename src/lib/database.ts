@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import { Database } from './supabase';
-import { Customer as FrontendCustomer, Booking as FrontendBooking, Expense as FrontendExpense } from './types';
+import { Customer as FrontendCustomer, Booking as FrontendBooking, Expense as FrontendExpense, Payment as FrontendPayment } from './types';
 
 type Customer = Database['public']['Tables']['customers']['Row'];
 type CustomerInsert = Database['public']['Tables']['customers']['Insert'];
@@ -15,6 +15,8 @@ type BookingComment = Database['public']['Tables']['booking_comments']['Row'];
 type BookingCommentInsert = Database['public']['Tables']['booking_comments']['Insert'];
 type BookingExpense = Database['public']['Tables']['booking_expenses']['Row'];
 type BookingExpenseInsert = Database['public']['Tables']['booking_expenses']['Insert'];
+type BookingPayment = Database['public']['Tables']['booking_payments']['Row'];
+type BookingPaymentInsert = Database['public']['Tables']['booking_payments']['Insert'];
 
 
 // Customer operations
@@ -274,7 +276,7 @@ export const customerService = {
       lead_type: customer.lead_type,
       service: customer.service,
       assignee: customer.assignee,
-      package_cost: 0,
+      package_cost: customer.package_cost || 0,
     };
 
     const { data: bookingData, error: bookingError } = await supabase
@@ -379,6 +381,7 @@ export const convertDbCustomerToFrontend = (dbCustomer: Customer) => ({
   comments: [], // Will be loaded separately
   updatedAt: dbCustomer.updated_at,
   isLocked: dbCustomer.is_locked,
+  packageCost: dbCustomer.package_cost || 0,
 });
 
 // Helper function to convert frontend customer to database format
@@ -396,6 +399,7 @@ export const convertFrontendCustomerToDb = (frontendCustomer: Omit<FrontendCusto
   service: frontendCustomer.service,
   assignee: frontendCustomer.assignee,
   is_locked: false,
+  package_cost: frontendCustomer.packageCost || 0,
 });
 
 // Helper function to convert partial frontend customer updates to database format
@@ -415,6 +419,7 @@ export const convertPartialFrontendCustomerToDb = (updates: Partial<FrontendCust
   if (updates.service !== undefined) dbUpdates.service = updates.service;
   if (updates.assignee !== undefined) dbUpdates.assignee = updates.assignee;
   if (updates.isLocked !== undefined) dbUpdates.is_locked = updates.isLocked;
+  if (updates.packageCost !== undefined) dbUpdates.package_cost = updates.packageCost;
   
   return dbUpdates;
 };
@@ -619,10 +624,12 @@ export const convertDbBookingToFrontend = (dbBooking: Booking) => ({
   updatedAt: dbBooking.updated_at,
   packageCost: dbBooking.package_cost,
   expenses: [], // Will be loaded separately
+  payments: [], // Will be loaded separately
+  profit: dbBooking.profit || 0,
 });
 
 // Helper function to convert frontend booking to database format
-export const convertFrontendBookingToDb = (frontendBooking: Omit<FrontendBooking, 'id' | 'updatedAt' | 'comments' | 'expenses'>): BookingInsert => ({
+export const convertFrontendBookingToDb = (frontendBooking: Omit<FrontendBooking, 'id' | 'updatedAt' | 'comments' | 'expenses' | 'payments'>): BookingInsert => ({
   name: frontendBooking.name,
   phone: frontendBooking.phone,
   destination: frontendBooking.destination || null,
@@ -637,6 +644,7 @@ export const convertFrontendBookingToDb = (frontendBooking: Omit<FrontendBooking
   assignee: frontendBooking.assignee,
   package_cost: frontendBooking.packageCost || 0,
   booking_id: frontendBooking.bookingId || null,
+  profit: frontendBooking.profit || 0,
 });
 
 // Helper function to convert partial frontend booking updates to database format
@@ -657,6 +665,7 @@ export const convertPartialFrontendBookingToDb = (updates: Partial<FrontendBooki
   if (updates.assignee !== undefined) dbUpdates.assignee = updates.assignee;
   if (updates.packageCost !== undefined) dbUpdates.package_cost = updates.packageCost;
   if (updates.bookingId !== undefined) dbUpdates.booking_id = updates.bookingId || null;
+  if (updates.profit !== undefined) dbUpdates.profit = updates.profit;
   
   return dbUpdates;
 };
@@ -712,5 +721,58 @@ export const convertDbExpenseToFrontend = (dbExpense: BookingExpense): FrontendE
   userId: dbExpense.user_id,
   userName: dbExpense.user_name,
   timestamp: dbExpense.created_at,
+});
+
+// Booking Payment operations
+export const bookingPaymentService = {
+  // Get payments for a booking
+  async getByBookingId(bookingId: string): Promise<FrontendPayment[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    
+    const { data, error } = await supabase
+      .from('booking_payments')
+      .select('*')
+      .eq('booking_id', bookingId)
+      .order('created_at', { ascending: true });
+    
+    if (error) throw error;
+    return (data || []).map(convertDbPaymentToFrontend);
+  },
+
+  // Add payment
+  async add(payment: BookingPaymentInsert): Promise<FrontendPayment> {
+    if (!supabase) throw new Error('Supabase not configured');
+    
+    const { data, error } = await supabase
+      .from('booking_payments')
+      .insert(payment)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return convertDbPaymentToFrontend(data);
+  },
+
+  // Delete payment
+  async delete(id: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    
+    const { error } = await supabase
+      .from('booking_payments')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+  }
+};
+
+export const convertDbPaymentToFrontend = (dbPayment: BookingPayment): FrontendPayment => ({
+  id: dbPayment.id,
+  amount: dbPayment.amount,
+  tag: dbPayment.tag,
+  description: dbPayment.description || '',
+  userId: dbPayment.user_id,
+  userName: dbPayment.user_name,
+  timestamp: dbPayment.created_at,
 });
 

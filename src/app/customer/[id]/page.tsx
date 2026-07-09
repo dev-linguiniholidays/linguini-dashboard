@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Edit, MessageSquare, Save, X, Lock, Check, Send, Loader2 } from 'lucide-react';
+import { ArrowLeft, Edit, MessageSquare, Save, X, Lock, Unlock, Check, Send, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { useCustomers } from '@/hooks/useCustomers';
@@ -81,6 +81,7 @@ export default function CustomerDetailPage() {
     updateCustomer, 
     addComment, 
     lockCustomer, 
+    unlockCustomer,
     confirmBooking, 
     isLoading, 
     assigneeOptions = [] 
@@ -103,6 +104,7 @@ export default function CustomerDetailPage() {
     leadType: 'calling' as Customer['leadType'],
     service: 'tour-package' as Customer['service'],
     assignee: 'none' as Customer['assignee'],
+    packageCost: 0,
   });
   const [newComment, setNewComment] = useState('');
   const commentsRef = useRef<HTMLDivElement>(null);
@@ -123,6 +125,7 @@ export default function CustomerDetailPage() {
         leadType: customer.leadType,
         service: customer.service,
         assignee: customer.assignee,
+        packageCost: customer.packageCost || 0,
       });
     }
   }, [customer]);
@@ -246,6 +249,15 @@ export default function CustomerDetailPage() {
       toast.success('Lead punched-in successfully!');
     } catch {
       toast.error('Failed to punch in');
+    }
+  };
+
+  const handleUnlock = async () => {
+    try {
+      await unlockCustomer(customerId);
+      toast.success('Lead unlocked successfully!');
+    } catch {
+      toast.error('Failed to unlock lead');
     }
   };
 
@@ -471,6 +483,24 @@ export default function CustomerDetailPage() {
                     <p className="text-sm font-medium text-gray-800 bg-gray-50 p-2.5 rounded-lg border border-gray-100">{displayValue(customer.numberOfPax)}</p>
                   )}
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cust-package-cost">Package Cost (₹)</Label>
+                  {isEditing ? (
+                    <Input
+                      id="cust-package-cost"
+                      type="number"
+                      min="0"
+                      value={formData.packageCost}
+                      onChange={(e) => setFormData(prev => ({ ...prev, packageCost: parseFloat(e.target.value) || 0 }))}
+                      onFocus={(e) => e.target.select()}
+                    />
+                  ) : (
+                    <p className="text-sm font-semibold text-gray-950 bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                      ₹{(customer.packageCost || 0).toLocaleString('en-IN')}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -628,26 +658,34 @@ export default function CustomerDetailPage() {
                     <Lock className="h-4 w-4" />
                     Punch In (Lock Lead)
                   </Button>
-                )}
-
-                {customer.isLocked && (
-                  canConfirmBooking() ? (
-                    <Button
-                      onClick={handleConfirmBooking}
-                      className="w-full bg-green-600 hover:bg-green-700 text-white shadow-sm text-xs font-semibold flex items-center justify-center gap-1.5 h-10"
-                    >
-                      <Check className="h-4 w-4" />
-                      Confirm Booking & Move
-                    </Button>
-                  ) : (
-                    <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-3 flex items-start gap-2.5 text-xs">
-                      <Lock className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-                      <div>
-                        <p className="font-semibold">Locked by Assigned Advisor</p>
-                        <p className="text-[10px] text-amber-700/80 mt-0.5">Only administrative roles can authorize confirm booking movements.</p>
+                )}                 {customer.isLocked && (
+                  <div className="space-y-2 w-full">
+                    {canConfirmBooking() ? (
+                      <Button
+                        onClick={handleConfirmBooking}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white shadow-sm text-xs font-semibold flex items-center justify-center gap-1.5 h-10"
+                      >
+                        <Check className="h-4 w-4" />
+                        Confirm Booking & Move
+                      </Button>
+                    ) : (
+                      <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-3 flex items-start gap-2.5 text-xs">
+                        <Lock className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-semibold">Locked by Assigned Advisor</p>
+                          <p className="text-[10px] text-amber-700/80 mt-0.5">Only administrative roles can authorize confirm booking movements.</p>
+                        </div>
                       </div>
-                    </div>
-                  )
+                    )}
+                    <Button
+                      onClick={handleUnlock}
+                      variant="outline"
+                      className="w-full text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200 shadow-sm text-xs font-semibold flex items-center justify-center gap-1.5 h-10"
+                    >
+                      <Unlock className="h-4 w-4" />
+                      Undo Lock (Unlock Lead)
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>

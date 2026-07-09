@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Edit, Save, X, MessageSquare, Send, Loader2, Lock, Check } from 'lucide-react';
+import { Edit, Save, X, MessageSquare, Send, Loader2, Lock, Unlock, Check } from 'lucide-react';
 import { displayValue, formatDate, formatDateTime } from '@/lib/displayUtils';
 import { canEditCustomer, isSuperAdmin, isAdmin, canConfirmBooking } from '@/lib/roleUtils';
 import { toast } from 'sonner';
@@ -21,6 +21,7 @@ interface CustomerDetailsProps {
   onUpdate: (id: string, updates: Partial<Customer>) => void;
   onAddComment: (customerId: string, text: string) => void;
   onLock?: (id: string) => void;
+  onUnlock?: (id: string) => void;
   onConfirmBooking?: (id: string) => void;
   isLoading?: boolean;
   assigneeOptions?: string[];
@@ -88,6 +89,7 @@ export const CustomerDetails = ({
   onUpdate,
   onAddComment,
   onLock,
+  onUnlock,
   onConfirmBooking,
   isLoading = false,
   assigneeOptions = [],
@@ -107,6 +109,7 @@ export const CustomerDetails = ({
     leadType: 'calling' as Customer['leadType'],
     service: 'tour-package' as Customer['service'],
     assignee: 'none' as Customer['assignee'],
+    packageCost: 0,
   });
   const [newComment, setNewComment] = useState('');
 
@@ -153,6 +156,7 @@ export const CustomerDetails = ({
         leadType: customer.leadType,
         service: customer.service,
         assignee: customer.assignee,
+        packageCost: customer.packageCost || 0,
       });
     }
   }, [customer]);
@@ -284,25 +288,40 @@ export const CustomerDetails = ({
                     </Button>
                   )}
                   {!commentMode && customer.isLocked && (
-                    canConfirmBooking() ? (
+                    <div className="flex gap-2 items-center">
+                      {canConfirmBooking() ? (
+                        <Button
+                          onClick={() => {
+                            if (onConfirmBooking) onConfirmBooking(customer.id);
+                            toast.success('Lead confirmed and moved to bookings!');
+                            onClose();
+                          }}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                          size="sm"
+                        >
+                          <Check className="h-4 w-4 mr-1" />
+                          Confirm Booking
+                        </Button>
+                      ) : (
+                        <Badge className="bg-amber-100 text-amber-800 border border-amber-200 py-1.5 px-3">
+                          <Lock className="h-3 w-3 mr-1 inline" />
+                          Punched In (Locked)
+                        </Badge>
+                      )}
                       <Button
                         onClick={() => {
-                          if (onConfirmBooking) onConfirmBooking(customer.id);
-                          toast.success('Lead confirmed and moved to bookings!');
+                          if (onUnlock) onUnlock(customer.id);
+                          toast.success('Lead unlocked successfully!');
                           onClose();
                         }}
-                        className="bg-green-600 hover:bg-green-700 text-white"
+                        variant="outline"
+                        className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200"
                         size="sm"
                       >
-                        <Check className="h-4 w-4 mr-1" />
-                        Confirm Booking
+                        <Unlock className="h-4 w-4 mr-1" />
+                        Undo Lock
                       </Button>
-                    ) : (
-                      <Badge className="bg-amber-100 text-amber-800 border border-amber-200 py-1.5 px-3">
-                        <Lock className="h-3 w-3 mr-1 inline" />
-                        Punched In (Locked)
-                      </Badge>
-                    )
+                    </div>
                   )}
                   {!commentMode && canEditCustomer(customer) && (
                     <Button onClick={() => setIsEditing(true)} size="sm">
@@ -509,6 +528,21 @@ export const CustomerDetails = ({
                 />
               ) : (
                 <p className="text-sm font-medium">{formatDate(customer.leadCreationDate)}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Package Cost (₹)</Label>
+              {isEditing ? (
+                <Input
+                  type="number"
+                  min="0"
+                  value={formData.packageCost}
+                  onChange={(e) => setFormData(prev => ({ ...prev, packageCost: parseFloat(e.target.value) || 0 }))}
+                  onFocus={(e) => e.target.select()}
+                />
+              ) : (
+                <p className="text-sm font-semibold text-gray-900">₹{(customer.packageCost || 0).toLocaleString('en-IN')}</p>
               )}
             </div>
           </div>

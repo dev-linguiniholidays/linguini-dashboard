@@ -149,6 +149,20 @@ export const useCustomers = () => {
     }
   };
 
+  const unlockCustomer = async (id: string) => {
+    try {
+      if (supabase) {
+        await customerService.update(id, { is_locked: false });
+        setCustomers(prev => prev.map(c => c.id === id ? { ...c, isLocked: false } : c));
+      } else {
+        setCustomers(prev => prev.map(c => c.id === id ? { ...c, isLocked: false } : c));
+      }
+    } catch (error) {
+      console.error('Error unlocking customer:', error);
+      throw error;
+    }
+  };
+
   const confirmBooking = async (id: string) => {
     try {
       if (supabase) {
@@ -233,6 +247,7 @@ export const useCustomers = () => {
     deleteCustomer,
     addComment,
     lockCustomer,
+    unlockCustomer,
     confirmBooking,
     isAdding: false,
     isUpdating: false,

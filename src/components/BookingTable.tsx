@@ -306,7 +306,10 @@ export const BookingTable = ({
               <TableHead>Lead Type</TableHead>
               <TableHead>Service</TableHead>
               <TableHead>Package Cost</TableHead>
+              <TableHead>Total Paid</TableHead>
+              <TableHead>Pending Amount</TableHead>
               <TableHead>Total Expenses</TableHead>
+              <TableHead>Profit</TableHead>
               <TableHead>Comments</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -314,7 +317,7 @@ export const BookingTable = ({
           <TableBody>
             {currentBookings.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={16} className="text-center py-8 text-gray-500 italic">
+                <TableCell colSpan={19} className="text-center py-8 text-gray-500 italic">
                   No bookings found. Confirm a punched-in customer lead to see it here!
                 </TableCell>
               </TableRow>
@@ -350,7 +353,7 @@ export const BookingTable = ({
                   <TableCell>{formatDate(booking.travelStartDate)}</TableCell>
                   <TableCell>{formatDate(booking.travelEndDate)}</TableCell>
                   <TableCell>{displayValue(booking.numberOfPax)}</TableCell>
-
+ 
                   <TableCell>
                     <Badge className={leadTypeColors[booking.leadType]}>
                       {getLeadTypeLabel(booking.leadType)}
@@ -361,11 +364,20 @@ export const BookingTable = ({
                       {getServiceLabel(booking.service)}
                     </Badge>
                   </TableCell>
-                  <TableCell className="font-semibold">
+                  <TableCell className="font-semibold text-gray-900">
                     ₹{(booking.packageCost || 0).toLocaleString('en-IN')}
+                  </TableCell>
+                  <TableCell className="font-semibold text-emerald-600">
+                    ₹{((booking.payments || []).reduce((sum, p) => sum + p.amount, 0)).toLocaleString('en-IN')}
+                  </TableCell>
+                  <TableCell className="font-semibold text-amber-600">
+                    ₹{((booking.packageCost || 0) - (booking.payments || []).reduce((sum, p) => sum + p.amount, 0)).toLocaleString('en-IN')}
                   </TableCell>
                   <TableCell className="font-semibold text-rose-600">
                     ₹{(booking.expenses || []).reduce((sum, exp) => sum + exp.amount, 0).toLocaleString('en-IN')}
+                  </TableCell>
+                  <TableCell className={`font-semibold ${booking.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                    ₹{(booking.profit || 0).toLocaleString('en-IN')}
                   </TableCell>
                   <TableCell>
                     <Button
