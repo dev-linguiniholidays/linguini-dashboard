@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Booking, Expense, Payment } from '@/lib/types';
+import { Booking, Expense, Payment, Passenger } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,6 +40,8 @@ const statusColors = {
 const leadTypeColors = {
   calling: 'bg-blue-100 text-blue-800 hover:opacity-70 transition-opacity',
   instagram: 'bg-pink-100 text-pink-800 hover:opacity-70 transition-opacity',
+  'instagram-ad': 'bg-fuchsia-100 text-fuchsia-800 hover:opacity-70 transition-opacity',
+  'whatsapp-ad': 'bg-emerald-100 text-emerald-800 hover:opacity-70 transition-opacity',
   referral: 'bg-green-100 text-green-800 hover:opacity-70 transition-opacity',
   website: 'bg-purple-100 text-purple-800 hover:opacity-70 transition-opacity',
   facebook: 'bg-blue-100 text-blue-800 hover:opacity-70 transition-opacity',
@@ -127,6 +129,11 @@ export const BookingDetails = ({
     service: 'tour-package' as Booking['service'],
     assignee: 'none' as Booking['assignee'],
     packageCost: 0,
+    aadhaarNo: '',
+    passengers: [] as Passenger[],
+    email: '',
+    emergencyContactName: '',
+    emergencyContactPhone: '',
   });
   const [newComment, setNewComment] = useState('');
 
@@ -176,11 +183,44 @@ export const BookingDetails = ({
         service: booking.service,
         assignee: booking.assignee,
         packageCost: booking.packageCost || 0,
+        aadhaarNo: booking.aadhaarNo || '',
+        passengers: booking.passengers || [],
+        email: booking.email || '',
+        emergencyContactName: booking.emergencyContactName || '',
+        emergencyContactPhone: booking.emergencyContactPhone || '',
       });
     }
   }, [booking]);
 
   const handleSave = async () => {
+    if (!formData.name.trim()) {
+      toast.error('Name is required');
+      return;
+    }
+    if (!formData.phone.trim()) {
+      toast.error('Phone is required');
+      return;
+    }
+    if (formData.aadhaarNo && formData.aadhaarNo.trim()) {
+      if (!/^\d{12}$/.test(formData.aadhaarNo.replace(/\s/g, ''))) {
+        toast.error('Primary Aadhaar number must be a 12-digit number');
+        return;
+      }
+    }
+
+    if (formData.numberOfPax > 1 && formData.passengers) {
+      let hasError = false;
+      formData.passengers.forEach((pax, index) => {
+        if (pax.aadhaarNo && pax.aadhaarNo.trim()) {
+          if (!/^\d{12}$/.test(pax.aadhaarNo.replace(/\s/g, ''))) {
+            toast.error(`Passenger #${index + 2} Aadhaar number must be a 12-digit number`);
+            hasError = true;
+          }
+        }
+      });
+      if (hasError) return;
+    }
+
     try {
       await onUpdate(booking.id, {
         ...formData,
@@ -321,6 +361,8 @@ export const BookingDetails = ({
     const labels: Record<string, string> = {
       calling: 'Calling',
       instagram: 'Instagram',
+      'instagram-ad': 'Instagram Ad',
+      'whatsapp-ad': 'Whatsapp Ad',
       referral: 'Referral',
       website: 'Website',
       facebook: 'Facebook',
@@ -493,10 +535,85 @@ export const BookingDetails = ({
                   type="number"
                   min="1"
                   value={formData.numberOfPax}
-                  onChange={(e) => setFormData(prev => ({ ...prev, numberOfPax: parseInt(e.target.value) || 1 }))}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value) || 1;
+                    setFormData(prev => {
+                      const targetLength = Math.max(0, val - 1);
+                      const currentPassengers = prev.passengers || [];
+                      let newPassengers = [...currentPassengers];
+                      if (newPassengers.length < targetLength) {
+                        for (let i = newPassengers.length; i < targetLength; i++) {
+                          newPassengers.push({ name: '', gender: '', age: '', aadhaarNo: '' });
+                        }
+                      } else if (newPassengers.length > targetLength) {
+                        newPassengers = newPassengers.slice(0, targetLength);
+                      }
+                      return {
+                        ...prev,
+                        numberOfPax: val,
+                        passengers: newPassengers
+                      };
+                    });
+                  }}
                 />
               ) : (
                 <p className="text-sm font-medium">{displayValue(formData.numberOfPax)}</p>
+              )}
+            </div>
+
+             <div className="space-y-2">
+              <Label>Aadhaar Number</Label>
+              {isEditing ? (
+                <Input
+                  value={formData.aadhaarNo}
+                  placeholder="12-digit number"
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').substring(0, 12);
+                    setFormData(prev => ({ ...prev, aadhaarNo: val }));
+                  }}
+                />
+              ) : (
+                <p className="text-sm font-medium">{displayValue(booking.aadhaarNo, 'Not provided')}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Email Address</Label>
+              {isEditing ? (
+                <Input
+                  type="email"
+                  value={formData.email}
+                  placeholder="customer@email.com"
+                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                />
+              ) : (
+                <p className="text-sm font-medium">{displayValue(booking.email, 'Not provided')}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Emergency Contact Person</Label>
+              {isEditing ? (
+                <Input
+                  value={formData.emergencyContactName}
+                  placeholder="Emergency Contact Name"
+                  onChange={(e) => setFormData(prev => ({ ...prev, emergencyContactName: e.target.value }))}
+                />
+              ) : (
+                <p className="text-sm font-medium">{displayValue(booking.emergencyContactName, 'Not provided')}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Emergency Contact Phone</Label>
+              {isEditing ? (
+                <Input
+                  value={formData.emergencyContactPhone}
+                  placeholder="Emergency Contact Phone"
+                  onChange={(e) => setFormData(prev => ({ ...prev, emergencyContactPhone: e.target.value }))}
+                />
+              ) : (
+                <p className="text-sm font-medium">{displayValue(booking.emergencyContactPhone, 'Not provided')}</p>
               )}
             </div>
 
@@ -510,6 +627,8 @@ export const BookingDetails = ({
                   <SelectContent>
                     <SelectItem value="calling">Calling</SelectItem>
                     <SelectItem value="instagram">Instagram</SelectItem>
+                    <SelectItem value="instagram-ad">Instagram Ad</SelectItem>
+                    <SelectItem value="whatsapp-ad">Whatsapp Ad</SelectItem>
                     <SelectItem value="referral">Referral</SelectItem>
                     <SelectItem value="website">Website</SelectItem>
                     <SelectItem value="facebook">Facebook</SelectItem>
@@ -628,6 +747,161 @@ export const BookingDetails = ({
                 ₹{(booking.profit || 0).toLocaleString('en-IN')}
               </p>
             </div>
+
+            {/* Additional Passenger Details (both view and edit mode) */}
+            {((isEditing && formData.passengers && formData.passengers.length > 0) || 
+              (!isEditing && booking.passengers && booking.passengers.length > 0)) && (
+              <div className="col-span-1 md:col-span-2 border-t pt-4 mt-2 space-y-4">
+                <h3 className="font-semibold text-gray-900">Additional Passenger Details</h3>
+                {isEditing ? (
+                  formData.passengers.map((passenger, index) => (
+                    <div key={index} className="p-4 border border-gray-100 rounded-lg bg-gray-50/50 space-y-3">
+                      <h4 className="text-sm font-medium text-gray-700">Passenger #{index + 2}</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <div className="space-y-1">
+                          <Label>Name</Label>
+                          <Input
+                            value={passenger.name}
+                            onChange={(e) => {
+                              const updated = [...formData.passengers];
+                              updated[index].name = e.target.value;
+                              setFormData(prev => ({ ...prev, passengers: updated }));
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Gender</Label>
+                          <Select
+                            value={passenger.gender}
+                            onValueChange={(val) => {
+                              const updated = [...formData.passengers];
+                              updated[index].gender = val as Passenger['gender'];
+                              setFormData(prev => ({ ...prev, passengers: updated }));
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="male">Male</SelectItem>
+                              <SelectItem value="female">Female</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Age</Label>
+                          <Input
+                            type="number"
+                            value={passenger.age}
+                            onChange={(e) => {
+                              const updated = [...formData.passengers];
+                              updated[index].age = e.target.value === '' ? '' : parseInt(e.target.value) || '';
+                              setFormData(prev => ({ ...prev, passengers: updated }));
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Aadhaar No</Label>
+                          <Input
+                            value={passenger.aadhaarNo}
+                            placeholder="12-digit number"
+                            onChange={(e) => {
+                              const updated = [...formData.passengers];
+                              updated[index].aadhaarNo = e.target.value.replace(/\D/g, '').substring(0, 12);
+                              setFormData(prev => ({ ...prev, passengers: updated }));
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Contact No</Label>
+                          <Input
+                            value={passenger.contactNo || ''}
+                            placeholder="Phone number"
+                            onChange={(e) => {
+                              const updated = [...formData.passengers];
+                              updated[index].contactNo = e.target.value;
+                              setFormData(prev => ({ ...prev, passengers: updated }));
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Email ID</Label>
+                          <Input
+                            type="email"
+                            value={passenger.emailId || ''}
+                            placeholder="Email address"
+                            onChange={(e) => {
+                              const updated = [...formData.passengers];
+                              updated[index].emailId = e.target.value;
+                              setFormData(prev => ({ ...prev, passengers: updated }));
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Emergency Contact Person</Label>
+                          <Input
+                            value={passenger.emergencyContactName || ''}
+                            placeholder="Contact Name"
+                            onChange={(e) => {
+                              const updated = [...formData.passengers];
+                              updated[index].emergencyContactName = e.target.value;
+                              setFormData(prev => ({ ...prev, passengers: updated }));
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Emergency Contact Phone</Label>
+                          <Input
+                            value={passenger.emergencyContactPhone || ''}
+                            placeholder="Phone number"
+                            onChange={(e) => {
+                              const updated = [...formData.passengers];
+                              updated[index].emergencyContactPhone = e.target.value;
+                              setFormData(prev => ({ ...prev, passengers: updated }));
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {booking.passengers?.map((passenger, index) => (
+                      <div key={index} className="p-3.5 border border-gray-150 rounded-lg bg-gray-50 space-y-1.5 shadow-sm">
+                        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Passenger #{index + 2}</h4>
+                        <p className="text-sm font-semibold text-gray-800">{passenger.name || 'Name not provided'}</p>
+                        <div className="flex gap-2 text-xs text-gray-600">
+                          {passenger.gender && <Badge variant="outline" className="text-[10px] capitalize font-medium py-0 px-1.5">{passenger.gender}</Badge>}
+                          {passenger.age && <span>{passenger.age} years old</span>}
+                        </div>
+                        {passenger.aadhaarNo && (
+                          <p className="text-xs text-gray-600">
+                            Aadhaar: <span className="font-mono text-gray-700 font-medium">{passenger.aadhaarNo}</span>
+                          </p>
+                        )}
+                        {passenger.contactNo && (
+                          <p className="text-xs text-gray-600">
+                            Contact: <span className="text-gray-700">{passenger.contactNo}</span>
+                          </p>
+                        )}
+                        {passenger.emailId && (
+                          <p className="text-xs text-gray-600">
+                            Email: <span className="text-gray-700">{passenger.emailId}</span>
+                          </p>
+                        )}
+                        {passenger.emergencyContactName && (
+                          <p className="text-xs text-gray-600">
+                            Emergency Contact: <span className="text-gray-700 font-medium">{passenger.emergencyContactName}</span>
+                            {passenger.emergencyContactPhone && <span> ({passenger.emergencyContactPhone})</span>}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Description */}
@@ -696,7 +970,7 @@ export const BookingDetails = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Receipt className="h-5 w-5 text-gray-500" />
-                  <h3 className="text-lg font-semibold">Payments Log</h3>
+                  <h3 className="text-lg font-semibold">Cx Payments Log</h3>
                 </div>
                 <div className="text-sm font-semibold bg-emerald-55 text-emerald-700 px-3 py-1 rounded-full border border-emerald-200 shadow-sm">
                   Total: ₹{totalPayments.toLocaleString('en-IN')}

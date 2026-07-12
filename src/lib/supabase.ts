@@ -24,13 +24,18 @@ export interface Database {
           travel_end_date: string | null
           lead_creation_date: string
           number_of_pax: number
-          lead_type: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other'
+          lead_type: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other' | 'instagram-ad' | 'whatsapp-ad'
           service: 'tour-package' | 'flight' | 'train' | 'visa' | 'group-departure' | 'bus' | 'cab' | 'hotel'
           assignee: string
           created_at: string
           updated_at: string
           is_locked: boolean
           package_cost: number
+          aadhaar_no: string | null
+          passengers: unknown
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
         }
         Insert: {
           id?: string
@@ -43,13 +48,18 @@ export interface Database {
           travel_end_date?: string | null
           lead_creation_date?: string
           number_of_pax?: number
-          lead_type?: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other'
+          lead_type?: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other' | 'instagram-ad' | 'whatsapp-ad'
           service?: 'tour-package' | 'flight' | 'train' | 'visa' | 'group-departure' | 'bus' | 'cab' | 'hotel'
           assignee?: string
           created_at?: string
           updated_at?: string
           is_locked?: boolean
           package_cost?: number
+          aadhaar_no?: string | null
+          passengers?: unknown
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
         }
         Update: {
           id?: string
@@ -62,13 +72,18 @@ export interface Database {
           travel_end_date?: string | null
           lead_creation_date?: string
           number_of_pax?: number
-          lead_type?: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other'
+          lead_type?: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other' | 'instagram-ad' | 'whatsapp-ad'
           service?: 'tour-package' | 'flight' | 'train' | 'visa' | 'group-departure' | 'bus' | 'cab' | 'hotel'
           assignee?: string
           created_at?: string
           updated_at?: string
           is_locked?: boolean
           package_cost?: number
+          aadhaar_no?: string | null
+          passengers?: unknown
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
         }
       }
       bookings: {
@@ -84,13 +99,18 @@ export interface Database {
           travel_end_date: string | null
           lead_creation_date: string
           number_of_pax: number
-          lead_type: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other'
+          lead_type: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other' | 'instagram-ad' | 'whatsapp-ad'
           service: 'tour-package' | 'flight' | 'train' | 'visa' | 'group-departure' | 'bus' | 'cab' | 'hotel'
           assignee: string
           created_at: string
           updated_at: string
           package_cost: number
           profit: number
+          aadhaar_no: string | null
+          passengers: unknown
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
         }
         Insert: {
           id?: string
@@ -104,13 +124,18 @@ export interface Database {
           travel_end_date?: string | null
           lead_creation_date?: string
           number_of_pax?: number
-          lead_type?: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other'
+          lead_type?: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other' | 'instagram-ad' | 'whatsapp-ad'
           service?: 'tour-package' | 'flight' | 'train' | 'visa' | 'group-departure' | 'bus' | 'cab' | 'hotel'
           assignee?: string
           created_at?: string
           updated_at?: string
           package_cost?: number
           profit?: number
+          aadhaar_no?: string | null
+          passengers?: unknown
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
         }
         Update: {
           id?: string
@@ -124,13 +149,18 @@ export interface Database {
           travel_end_date?: string | null
           lead_creation_date?: string
           number_of_pax?: number
-          lead_type?: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other'
+          lead_type?: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other' | 'instagram-ad' | 'whatsapp-ad'
           service?: 'tour-package' | 'flight' | 'train' | 'visa' | 'group-departure' | 'bus' | 'cab' | 'hotel'
           assignee?: string
           created_at?: string
           updated_at?: string
           package_cost?: number
           profit?: number
+          aadhaar_no?: string | null
+          passengers?: unknown
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
         }
       }
       customer_comments: {

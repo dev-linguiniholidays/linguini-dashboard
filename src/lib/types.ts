@@ -6,6 +6,17 @@ export interface Comment {
   timestamp: string;
 }
 
+export interface Passenger {
+  name: string;
+  gender: 'male' | 'female' | 'other' | '';
+  age: number | '';
+  aadhaarNo: string;
+  contactNo?: string;
+  emailId?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+}
+
 export interface Customer {
   id: string;
   name: string;
@@ -17,13 +28,18 @@ export interface Customer {
   travelEndDate: string;
   leadCreationDate: string;
   numberOfPax: number;
-  leadType: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other';
+  leadType: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other' | 'instagram-ad' | 'whatsapp-ad';
   service: 'tour-package' | 'flight' | 'train' | 'visa' | 'group-departure' | 'bus' | 'cab' | 'hotel';
   assignee: string;
   comments: Comment[];
   updatedAt: string;
   isLocked: boolean;
   packageCost: number;
+  aadhaarNo?: string;
+  passengers?: Passenger[];
+  email?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
 }
 
 export interface Expense {
@@ -58,7 +74,7 @@ export interface Booking {
   travelEndDate: string;
   leadCreationDate: string;
   numberOfPax: number;
-  leadType: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other';
+  leadType: 'calling' | 'instagram' | 'referral' | 'website' | 'facebook' | 'walk-in' | 'other' | 'instagram-ad' | 'whatsapp-ad';
   service: 'tour-package' | 'flight' | 'train' | 'visa' | 'group-departure' | 'bus' | 'cab' | 'hotel';
   assignee: string;
   comments: Comment[];
@@ -67,5 +83,10 @@ export interface Booking {
   expenses: Expense[];
   payments: Payment[];
   profit: number;
+  aadhaarNo?: string;
+  passengers?: Passenger[];
+  email?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
 }
 

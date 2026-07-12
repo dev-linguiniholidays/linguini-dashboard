@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Customer } from '@/lib/types';
+import { Customer, Passenger } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -45,6 +45,11 @@ export const CustomerForm = ({
     service: 'tour-package' as Customer['service'],
     assignee: 'none' as Customer['assignee'],
     packageCost: 0 as number | string,
+    aadhaarNo: '',
+    passengers: [] as Passenger[],
+    email: '',
+    emergencyContactName: '',
+    emergencyContactPhone: '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -65,6 +70,11 @@ export const CustomerForm = ({
         service: customer.service,
         assignee: customer.assignee,
         packageCost: customer.packageCost || 0,
+        aadhaarNo: customer.aadhaarNo || '',
+        passengers: customer.passengers || [],
+        email: customer.email || '',
+        emergencyContactName: customer.emergencyContactName || '',
+        emergencyContactPhone: customer.emergencyContactPhone || '',
       });
     } else {
       setFormData({
@@ -81,6 +91,11 @@ export const CustomerForm = ({
         service: 'tour-package',
         assignee: 'none',
         packageCost: 0,
+        aadhaarNo: '',
+        passengers: [],
+        email: '',
+        emergencyContactName: '',
+        emergencyContactPhone: '',
       });
     }
     setErrors({});
@@ -117,6 +132,12 @@ export const CustomerForm = ({
     const numberOfPax = typeof formData.numberOfPax === 'string' ? parseInt(formData.numberOfPax) : formData.numberOfPax;
     if (isNaN(numberOfPax) || numberOfPax < 1) {
       newErrors.numberOfPax = 'Number of passengers must be at least 1';
+    }
+
+    if (formData.aadhaarNo && formData.aadhaarNo.trim()) {
+      if (!/^\d{12}$/.test(formData.aadhaarNo.replace(/\s/g, ''))) {
+        newErrors.aadhaarNo = 'Aadhaar number must be a 12-digit number';
+      }
     }
 
     setErrors(newErrors);
@@ -163,8 +184,25 @@ export const CustomerForm = ({
     }
   };
 
-  const handleInputChange = (field: string, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = (field: string, value: string | number | boolean | Passenger[]) => {
+    setFormData(prev => {
+      const updated = { ...prev, [field]: value };
+      if (field === 'numberOfPax') {
+        const pax = typeof value === 'number' ? value : (typeof value === 'string' ? parseInt(value) || 0 : 0);
+        const targetLength = Math.max(0, pax - 1);
+        const currentPassengers = prev.passengers || [];
+        let newPassengers = [...currentPassengers];
+        if (newPassengers.length < targetLength) {
+          for (let i = newPassengers.length; i < targetLength; i++) {
+            newPassengers.push({ name: '', gender: '', age: '', aadhaarNo: '' });
+          }
+        } else if (newPassengers.length > targetLength) {
+          newPassengers = newPassengers.slice(0, targetLength);
+        }
+        updated.passengers = newPassengers;
+      }
+      return updated;
+    });
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
@@ -318,6 +356,52 @@ export const CustomerForm = ({
               {errors.numberOfPax && <p className="text-sm text-red-500">{errors.numberOfPax}</p>}
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="aadhaarNo">Aadhaar Number</Label>
+              <Input
+                id="aadhaarNo"
+                value={formData.aadhaarNo}
+                placeholder="12-digit number"
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '').substring(0, 12);
+                  handleInputChange('aadhaarNo', val);
+                }}
+                className={errors.aadhaarNo ? 'border-red-500' : ''}
+              />
+              {errors.aadhaarNo && <p className="text-sm text-red-500">{errors.aadhaarNo}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="customer@email.com"
+                value={formData.email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="emergencyContactName">Emergency Contact Person (Name)</Label>
+              <Input
+                id="emergencyContactName"
+                placeholder="Emergency Contact Name"
+                value={formData.emergencyContactName}
+                onChange={(e) => handleInputChange('emergencyContactName', e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="emergencyContactPhone">Emergency Contact Phone No.</Label>
+              <Input
+                id="emergencyContactPhone"
+                placeholder="Emergency Contact Phone"
+                value={formData.emergencyContactPhone}
+                onChange={(e) => handleInputChange('emergencyContactPhone', e.target.value)}
+              />
+            </div>
+
 
             <div className="space-y-2">
               <Label htmlFor="leadType">Lead Type</Label>
@@ -328,6 +412,8 @@ export const CustomerForm = ({
                 <SelectContent>
                   <SelectItem value="calling">Calling</SelectItem>
                   <SelectItem value="instagram">Instagram</SelectItem>
+                  <SelectItem value="instagram-ad">Instagram Ad</SelectItem>
+                  <SelectItem value="whatsapp-ad">Whatsapp Ad</SelectItem>
                   <SelectItem value="referral">Referral</SelectItem>
                   <SelectItem value="website">Website</SelectItem>
                   <SelectItem value="facebook">Facebook</SelectItem>
@@ -413,6 +499,7 @@ export const CustomerForm = ({
                 onChange={(e) => handleInputChange('leadCreationDate', e.target.value)}
               />
             </div>
+
           </div>
 
           <div className="space-y-2">

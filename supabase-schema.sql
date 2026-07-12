@@ -310,3 +310,28 @@ DROP TRIGGER IF EXISTS calculate_booking_profit_trigger ON public.bookings;
 CREATE TRIGGER calculate_booking_profit_trigger
   BEFORE INSERT OR UPDATE ON public.bookings
   FOR EACH ROW EXECUTE FUNCTION public.calculate_booking_profit_on_cost_update();
+
+-- 13. Add Aadhaar number and passenger details for bookings/customers
+ALTER TABLE public.customers ADD COLUMN IF NOT EXISTS aadhaar_no TEXT;
+ALTER TABLE public.customers ADD COLUMN IF NOT EXISTS passengers JSONB NOT NULL DEFAULT '[]'::jsonb;
+
+ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS aadhaar_no TEXT;
+ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS passengers JSONB NOT NULL DEFAULT '[]'::jsonb;
+
+-- 14. Add primary customer optional fields: email, emergency contact name, and phone
+ALTER TABLE public.customers ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE public.customers ADD COLUMN IF NOT EXISTS emergency_contact_name TEXT;
+ALTER TABLE public.customers ADD COLUMN IF NOT EXISTS emergency_contact_phone TEXT;
+
+ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS emergency_contact_name TEXT;
+ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS emergency_contact_phone TEXT;
+
+-- 15. Update lead_type check constraints to include instagram-ad and whatsapp-ad
+ALTER TABLE public.customers DROP CONSTRAINT IF EXISTS customers_lead_type_check;
+ALTER TABLE public.customers ADD CONSTRAINT customers_lead_type_check CHECK (lead_type IN ('calling', 'instagram', 'referral', 'website', 'facebook', 'walk-in', 'other', 'instagram-ad', 'whatsapp-ad'));
+
+ALTER TABLE public.bookings DROP CONSTRAINT IF EXISTS bookings_lead_type_check;
+ALTER TABLE public.bookings ADD CONSTRAINT bookings_lead_type_check CHECK (lead_type IN ('calling', 'instagram', 'referral', 'website', 'facebook', 'walk-in', 'other', 'instagram-ad', 'whatsapp-ad'));
+
+

@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import { Database } from './supabase';
-import { Customer as FrontendCustomer, Booking as FrontendBooking, Expense as FrontendExpense, Payment as FrontendPayment } from './types';
+import { Customer as FrontendCustomer, Booking as FrontendBooking, Expense as FrontendExpense, Payment as FrontendPayment, Passenger } from './types';
 
 type Customer = Database['public']['Tables']['customers']['Row'];
 type CustomerInsert = Database['public']['Tables']['customers']['Insert'];
@@ -277,6 +277,11 @@ export const customerService = {
       service: customer.service,
       assignee: customer.assignee,
       package_cost: customer.package_cost || 0,
+      aadhaar_no: customer.aadhaar_no,
+      passengers: customer.passengers,
+      email: customer.email,
+      emergency_contact_name: customer.emergency_contact_name,
+      emergency_contact_phone: customer.emergency_contact_phone,
     };
 
     const { data: bookingData, error: bookingError } = await supabase
@@ -382,6 +387,11 @@ export const convertDbCustomerToFrontend = (dbCustomer: Customer) => ({
   updatedAt: dbCustomer.updated_at,
   isLocked: dbCustomer.is_locked,
   packageCost: dbCustomer.package_cost || 0,
+  aadhaarNo: dbCustomer.aadhaar_no || '',
+  passengers: (dbCustomer.passengers as Passenger[]) || [],
+  email: dbCustomer.email || '',
+  emergencyContactName: dbCustomer.emergency_contact_name || '',
+  emergencyContactPhone: dbCustomer.emergency_contact_phone || '',
 });
 
 // Helper function to convert frontend customer to database format
@@ -400,6 +410,11 @@ export const convertFrontendCustomerToDb = (frontendCustomer: Omit<FrontendCusto
   assignee: frontendCustomer.assignee,
   is_locked: false,
   package_cost: frontendCustomer.packageCost || 0,
+  aadhaar_no: frontendCustomer.aadhaarNo || null,
+  passengers: frontendCustomer.passengers || [],
+  email: frontendCustomer.email || null,
+  emergency_contact_name: frontendCustomer.emergencyContactName || null,
+  emergency_contact_phone: frontendCustomer.emergencyContactPhone || null,
 });
 
 // Helper function to convert partial frontend customer updates to database format
@@ -420,6 +435,11 @@ export const convertPartialFrontendCustomerToDb = (updates: Partial<FrontendCust
   if (updates.assignee !== undefined) dbUpdates.assignee = updates.assignee;
   if (updates.isLocked !== undefined) dbUpdates.is_locked = updates.isLocked;
   if (updates.packageCost !== undefined) dbUpdates.package_cost = updates.packageCost;
+  if (updates.aadhaarNo !== undefined) dbUpdates.aadhaar_no = updates.aadhaarNo || null;
+  if (updates.passengers !== undefined) dbUpdates.passengers = updates.passengers || [];
+  if (updates.email !== undefined) dbUpdates.email = updates.email || null;
+  if (updates.emergencyContactName !== undefined) dbUpdates.emergency_contact_name = updates.emergencyContactName || null;
+  if (updates.emergencyContactPhone !== undefined) dbUpdates.emergency_contact_phone = updates.emergencyContactPhone || null;
   
   return dbUpdates;
 };
@@ -626,6 +646,11 @@ export const convertDbBookingToFrontend = (dbBooking: Booking) => ({
   expenses: [], // Will be loaded separately
   payments: [], // Will be loaded separately
   profit: dbBooking.profit || 0,
+  aadhaarNo: dbBooking.aadhaar_no || '',
+  passengers: (dbBooking.passengers as Passenger[]) || [],
+  email: dbBooking.email || '',
+  emergencyContactName: dbBooking.emergency_contact_name || '',
+  emergencyContactPhone: dbBooking.emergency_contact_phone || '',
 });
 
 // Helper function to convert frontend booking to database format
@@ -645,6 +670,11 @@ export const convertFrontendBookingToDb = (frontendBooking: Omit<FrontendBooking
   package_cost: frontendBooking.packageCost || 0,
   booking_id: frontendBooking.bookingId || null,
   profit: frontendBooking.profit || 0,
+  aadhaar_no: frontendBooking.aadhaarNo || null,
+  passengers: frontendBooking.passengers || [],
+  email: frontendBooking.email || null,
+  emergency_contact_name: frontendBooking.emergencyContactName || null,
+  emergency_contact_phone: frontendBooking.emergencyContactPhone || null,
 });
 
 // Helper function to convert partial frontend booking updates to database format
@@ -666,6 +696,11 @@ export const convertPartialFrontendBookingToDb = (updates: Partial<FrontendBooki
   if (updates.packageCost !== undefined) dbUpdates.package_cost = updates.packageCost;
   if (updates.bookingId !== undefined) dbUpdates.booking_id = updates.bookingId || null;
   if (updates.profit !== undefined) dbUpdates.profit = updates.profit;
+  if (updates.aadhaarNo !== undefined) dbUpdates.aadhaar_no = updates.aadhaarNo || null;
+  if (updates.passengers !== undefined) dbUpdates.passengers = updates.passengers || [];
+  if (updates.email !== undefined) dbUpdates.email = updates.email || null;
+  if (updates.emergencyContactName !== undefined) dbUpdates.emergency_contact_name = updates.emergencyContactName || null;
+  if (updates.emergencyContactPhone !== undefined) dbUpdates.emergency_contact_phone = updates.emergencyContactPhone || null;
   
   return dbUpdates;
 };

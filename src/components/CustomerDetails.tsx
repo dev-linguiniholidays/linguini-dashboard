@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Customer } from '@/lib/types';
+import { Customer, Passenger } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -41,6 +41,8 @@ const statusColors = {
 const leadTypeColors = {
   calling: 'bg-blue-100 text-blue-800 hover:opacity-70 transition-opacity',
   instagram: 'bg-pink-100 text-pink-800 hover:opacity-70 transition-opacity',
+  'instagram-ad': 'bg-fuchsia-100 text-fuchsia-800 hover:opacity-70 transition-opacity',
+  'whatsapp-ad': 'bg-emerald-100 text-emerald-800 hover:opacity-70 transition-opacity',
   referral: 'bg-green-100 text-green-800 hover:opacity-70 transition-opacity',
   website: 'bg-purple-100 text-purple-800 hover:opacity-70 transition-opacity',
   facebook: 'bg-blue-100 text-blue-800 hover:opacity-70 transition-opacity',
@@ -110,6 +112,11 @@ export const CustomerDetails = ({
     service: 'tour-package' as Customer['service'],
     assignee: 'none' as Customer['assignee'],
     packageCost: 0,
+    aadhaarNo: '',
+    passengers: [] as Passenger[],
+    email: '',
+    emergencyContactName: '',
+    emergencyContactPhone: '',
   });
   const [newComment, setNewComment] = useState('');
 
@@ -157,11 +164,31 @@ export const CustomerDetails = ({
         service: customer.service,
         assignee: customer.assignee,
         packageCost: customer.packageCost || 0,
+        aadhaarNo: customer.aadhaarNo || '',
+        passengers: customer.passengers || [],
+        email: customer.email || '',
+        emergencyContactName: customer.emergencyContactName || '',
+        emergencyContactPhone: customer.emergencyContactPhone || '',
       });
     }
   }, [customer]);
 
   const handleSave = async () => {
+    if (!formData.name.trim()) {
+      toast.error('Name is required');
+      return;
+    }
+    if (!formData.phone.trim()) {
+      toast.error('Phone is required');
+      return;
+    }
+    if (formData.aadhaarNo && formData.aadhaarNo.trim()) {
+      if (!/^\d{12}$/.test(formData.aadhaarNo.replace(/\s/g, ''))) {
+        toast.error('Primary Aadhaar number must be a 12-digit number');
+        return;
+      }
+    }
+
     try {
       await onUpdate(customer.id, {
         ...formData,
@@ -222,6 +249,8 @@ export const CustomerDetails = ({
     const labels: Record<string, string> = {
       calling: 'Calling',
       instagram: 'Instagram',
+      'instagram-ad': 'Instagram Ad',
+      'whatsapp-ad': 'Whatsapp Ad',
       referral: 'Referral',
       website: 'Website',
       facebook: 'Facebook',
@@ -432,10 +461,85 @@ export const CustomerDetails = ({
                   type="number"
                   min="1"
                   value={formData.numberOfPax}
-                  onChange={(e) => setFormData(prev => ({ ...prev, numberOfPax: parseInt(e.target.value) || 1 }))}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value) || 1;
+                    setFormData(prev => {
+                      const targetLength = Math.max(0, val - 1);
+                      const currentPassengers = prev.passengers || [];
+                      let newPassengers = [...currentPassengers];
+                      if (newPassengers.length < targetLength) {
+                        for (let i = newPassengers.length; i < targetLength; i++) {
+                          newPassengers.push({ name: '', gender: '', age: '', aadhaarNo: '' });
+                        }
+                      } else if (newPassengers.length > targetLength) {
+                        newPassengers = newPassengers.slice(0, targetLength);
+                      }
+                      return {
+                        ...prev,
+                        numberOfPax: val,
+                        passengers: newPassengers
+                      };
+                    });
+                  }}
                 />
               ) : (
                 <p className="text-sm font-medium">{displayValue(customer.numberOfPax)}</p>
+              )}
+            </div>
+
+             <div className="space-y-2">
+              <Label>Aadhaar Number</Label>
+              {isEditing ? (
+                <Input
+                  value={formData.aadhaarNo}
+                  placeholder="12-digit number"
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').substring(0, 12);
+                    setFormData(prev => ({ ...prev, aadhaarNo: val }));
+                  }}
+                />
+              ) : (
+                <p className="text-sm font-medium">{displayValue(customer.aadhaarNo, 'Not provided')}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Email Address</Label>
+              {isEditing ? (
+                <Input
+                  type="email"
+                  value={formData.email}
+                  placeholder="customer@email.com"
+                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                />
+              ) : (
+                <p className="text-sm font-medium">{displayValue(customer.email, 'Not provided')}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Emergency Contact Person</Label>
+              {isEditing ? (
+                <Input
+                  value={formData.emergencyContactName}
+                  placeholder="Emergency Contact Name"
+                  onChange={(e) => setFormData(prev => ({ ...prev, emergencyContactName: e.target.value }))}
+                />
+              ) : (
+                <p className="text-sm font-medium">{displayValue(customer.emergencyContactName, 'Not provided')}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Emergency Contact Phone</Label>
+              {isEditing ? (
+                <Input
+                  value={formData.emergencyContactPhone}
+                  placeholder="Emergency Contact Phone"
+                  onChange={(e) => setFormData(prev => ({ ...prev, emergencyContactPhone: e.target.value }))}
+                />
+              ) : (
+                <p className="text-sm font-medium">{displayValue(customer.emergencyContactPhone, 'Not provided')}</p>
               )}
             </div>
 
@@ -450,6 +554,8 @@ export const CustomerDetails = ({
                   <SelectContent>
                     <SelectItem value="calling">Calling</SelectItem>
                     <SelectItem value="instagram">Instagram</SelectItem>
+                    <SelectItem value="instagram-ad">Instagram Ad</SelectItem>
+                    <SelectItem value="whatsapp-ad">Whatsapp Ad</SelectItem>
                     <SelectItem value="referral">Referral</SelectItem>
                     <SelectItem value="website">Website</SelectItem>
                     <SelectItem value="facebook">Facebook</SelectItem>
@@ -545,6 +651,8 @@ export const CustomerDetails = ({
                 <p className="text-sm font-semibold text-gray-900">₹{(customer.packageCost || 0).toLocaleString('en-IN')}</p>
               )}
             </div>
+
+            {/* Passengers block removed */}
           </div>
 
           {/* Description */}

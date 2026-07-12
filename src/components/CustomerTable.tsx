@@ -55,6 +55,8 @@ const statusColors = {
 const leadTypeColors = {
   calling: 'bg-blue-100 text-blue-800 hover:opacity-70 transition-opacity',
   instagram: 'bg-pink-100 text-pink-800 hover:opacity-70 transition-opacity',
+  'instagram-ad': 'bg-fuchsia-100 text-fuchsia-800 hover:opacity-70 transition-opacity',
+  'whatsapp-ad': 'bg-emerald-100 text-emerald-800 hover:opacity-70 transition-opacity',
   referral: 'bg-green-100 text-green-800 hover:opacity-70 transition-opacity',
   website: 'bg-purple-100 text-purple-800 hover:opacity-70 transition-opacity',
   facebook: 'bg-blue-100 text-blue-800 hover:opacity-70 transition-opacity',
@@ -180,6 +182,8 @@ export const CustomerTable = ({
     const labels: Record<string, string> = {
       calling: 'Calling',
       instagram: 'Instagram',
+      'instagram-ad': 'Instagram Ad',
+      'whatsapp-ad': 'Whatsapp Ad',
       referral: 'Referral',
       website: 'Website',
       facebook: 'Facebook',
@@ -269,6 +273,8 @@ export const CustomerTable = ({
             <SelectItem value="all">All Lead Types</SelectItem>
             <SelectItem value="calling">Calling</SelectItem>
             <SelectItem value="instagram">Instagram</SelectItem>
+            <SelectItem value="instagram-ad">Instagram Ad</SelectItem>
+            <SelectItem value="whatsapp-ad">Whatsapp Ad</SelectItem>
             <SelectItem value="referral">Referral</SelectItem>
             <SelectItem value="website">Website</SelectItem>
             <SelectItem value="facebook">Facebook</SelectItem>
