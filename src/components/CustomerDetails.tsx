@@ -487,22 +487,6 @@ export const CustomerDetails = ({
               )}
             </div>
 
-             <div className="space-y-2">
-              <Label>Aadhaar Number</Label>
-              {isEditing ? (
-                <Input
-                  value={formData.aadhaarNo}
-                  placeholder="12-digit number"
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/\D/g, '').substring(0, 12);
-                    setFormData(prev => ({ ...prev, aadhaarNo: val }));
-                  }}
-                />
-              ) : (
-                <p className="text-sm font-medium">{displayValue(customer.aadhaarNo, 'Not provided')}</p>
-              )}
-            </div>
-
             <div className="space-y-2">
               <Label>Email Address</Label>
               {isEditing ? (
@@ -514,32 +498,6 @@ export const CustomerDetails = ({
                 />
               ) : (
                 <p className="text-sm font-medium">{displayValue(customer.email, 'Not provided')}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Emergency Contact Person</Label>
-              {isEditing ? (
-                <Input
-                  value={formData.emergencyContactName}
-                  placeholder="Emergency Contact Name"
-                  onChange={(e) => setFormData(prev => ({ ...prev, emergencyContactName: e.target.value }))}
-                />
-              ) : (
-                <p className="text-sm font-medium">{displayValue(customer.emergencyContactName, 'Not provided')}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Emergency Contact Phone</Label>
-              {isEditing ? (
-                <Input
-                  value={formData.emergencyContactPhone}
-                  placeholder="Emergency Contact Phone"
-                  onChange={(e) => setFormData(prev => ({ ...prev, emergencyContactPhone: e.target.value }))}
-                />
-              ) : (
-                <p className="text-sm font-medium">{displayValue(customer.emergencyContactPhone, 'Not provided')}</p>
               )}
             </div>
 

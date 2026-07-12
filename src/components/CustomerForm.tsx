@@ -134,12 +134,6 @@ export const CustomerForm = ({
       newErrors.numberOfPax = 'Number of passengers must be at least 1';
     }
 
-    if (formData.aadhaarNo && formData.aadhaarNo.trim()) {
-      if (!/^\d{12}$/.test(formData.aadhaarNo.replace(/\s/g, ''))) {
-        newErrors.aadhaarNo = 'Aadhaar number must be a 12-digit number';
-      }
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -357,21 +351,6 @@ export const CustomerForm = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="aadhaarNo">Aadhaar Number</Label>
-              <Input
-                id="aadhaarNo"
-                value={formData.aadhaarNo}
-                placeholder="12-digit number"
-                onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, '').substring(0, 12);
-                  handleInputChange('aadhaarNo', val);
-                }}
-                className={errors.aadhaarNo ? 'border-red-500' : ''}
-              />
-              {errors.aadhaarNo && <p className="text-sm text-red-500">{errors.aadhaarNo}</p>}
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
               <Input
                 id="email"
@@ -379,26 +358,6 @@ export const CustomerForm = ({
                 placeholder="customer@email.com"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="emergencyContactName">Emergency Contact Person (Name)</Label>
-              <Input
-                id="emergencyContactName"
-                placeholder="Emergency Contact Name"
-                value={formData.emergencyContactName}
-                onChange={(e) => handleInputChange('emergencyContactName', e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="emergencyContactPhone">Emergency Contact Phone No.</Label>
-              <Input
-                id="emergencyContactPhone"
-                placeholder="Emergency Contact Phone"
-                value={formData.emergencyContactPhone}
-                onChange={(e) => handleInputChange('emergencyContactPhone', e.target.value)}
               />
             </div>
 

@@ -145,6 +145,50 @@ export default function BookingDetailPage() {
   const commentsRef = useRef<HTMLDivElement>(null);
 
   // Initialize form data when booking is loaded
+  // Helper to migrate and initialize passengers array
+  const sanitizePassengers = (b: Booking) => {
+    const paxCount = b.numberOfPax || 1;
+    const dbPassengers = b.passengers || [];
+    
+    if (dbPassengers.length === paxCount - 1) {
+      const passenger1: Passenger = {
+        name: b.name || '',
+        gender: '',
+        age: '',
+        aadhaarNo: b.aadhaarNo || '',
+        contactNo: b.phone || '',
+        emailId: b.email || '',
+        emergencyContactName: b.emergencyContactName || '',
+        emergencyContactPhone: b.emergencyContactPhone || '',
+      };
+      return [passenger1, ...dbPassengers];
+    }
+    
+    const result = [...dbPassengers];
+    if (result.length === 0) {
+      result.push({
+        name: b.name || '',
+        gender: '',
+        age: '',
+        aadhaarNo: b.aadhaarNo || '',
+        contactNo: b.phone || '',
+        emailId: b.email || '',
+        emergencyContactName: b.emergencyContactName || '',
+        emergencyContactPhone: b.emergencyContactPhone || '',
+      });
+    }
+    
+    while (result.length < paxCount) {
+      result.push({ name: '', gender: '', age: '', aadhaarNo: '' });
+    }
+    
+    if (result.length > paxCount) {
+      return result.slice(0, paxCount);
+    }
+    
+    return result;
+  };
+
   useEffect(() => {
     if (booking) {
       setFormData({
@@ -162,7 +206,7 @@ export default function BookingDetailPage() {
         assignee: booking.assignee,
         packageCost: booking.packageCost || 0,
         aadhaarNo: booking.aadhaarNo || '',
-        passengers: booking.passengers || [],
+        passengers: sanitizePassengers(booking),
         email: booking.email || '',
         emergencyContactName: booking.emergencyContactName || '',
         emergencyContactPhone: booking.emergencyContactPhone || '',
@@ -528,7 +572,7 @@ export default function BookingDetailPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="book-name">Customer Name</Label>
+                  <Label htmlFor="book-name">Booking Customer Name</Label>
                   {isEditing ? (
                     <Input
                       id="book-name"
@@ -555,7 +599,7 @@ export default function BookingDetailPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="book-email">Email Address</Label>
+                  <Label htmlFor="book-email">Booking Email ID</Label>
                   {isEditing ? (
                     <Input
                       id="book-email"
@@ -568,37 +612,9 @@ export default function BookingDetailPage() {
                     <p className="text-sm font-medium text-gray-800 bg-gray-50 p-2.5 rounded-lg border border-gray-100">{displayValue(booking.email, 'Not provided')}</p>
                   )}
                 </div>
+                {/* Aadhaar Number field removed from main section */}
 
-                <div className="space-y-2">
-                  <Label htmlFor="book-aadhaar">Aadhaar Number</Label>
-                  {isEditing ? (
-                    <Input
-                      id="book-aadhaar"
-                      value={formData.aadhaarNo}
-                      placeholder="12-digit number"
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/\D/g, '').substring(0, 12);
-                        setFormData(prev => ({ ...prev, aadhaarNo: val }));
-                      }}
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-800 bg-gray-50 p-2.5 rounded-lg border border-gray-100">{displayValue(booking.aadhaarNo, 'Not provided')}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="book-creation">Booking Created Date</Label>
-                  {isEditing ? (
-                    <Input
-                      id="book-creation"
-                      type="date"
-                      value={formData.leadCreationDate}
-                      onChange={(e) => setFormData(prev => ({ ...prev, leadCreationDate: e.target.value }))}
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-800 bg-gray-50 p-2.5 rounded-lg border border-gray-100">{formatDate(booking.leadCreationDate)}</p>
-                  )}
-                </div>
+                {/* Booking Created Date field moved to Travel plans column */}
               </div>
 
               {/* Travel Specification */}
@@ -659,7 +675,7 @@ export default function BookingDetailPage() {
                       onChange={(e) => {
                         const val = parseInt(e.target.value) || 1;
                         setFormData(prev => {
-                          const targetLength = Math.max(0, val - 1);
+                          const targetLength = val;
                           const currentPassengers = prev.passengers || [];
                           let newPassengers = [...currentPassengers];
                           if (newPassengers.length < targetLength) {
@@ -682,35 +698,21 @@ export default function BookingDetailPage() {
                   )}
                 </div>
 
-                {/* Aadhaar and Email moved to left column */}
-
                 <div className="space-y-2">
-                  <Label htmlFor="book-emergency-name">Emergency Contact Person</Label>
+                  <Label htmlFor="book-creation">Booking Created Date</Label>
                   {isEditing ? (
                     <Input
-                      id="book-emergency-name"
-                      value={formData.emergencyContactName}
-                      placeholder="Emergency Contact Name"
-                      onChange={(e) => setFormData(prev => ({ ...prev, emergencyContactName: e.target.value }))}
+                      id="book-creation"
+                      type="date"
+                      value={formData.leadCreationDate}
+                      onChange={(e) => setFormData(prev => ({ ...prev, leadCreationDate: e.target.value }))}
                     />
                   ) : (
-                    <p className="text-sm font-medium text-gray-800 bg-gray-50 p-2.5 rounded-lg border border-gray-100">{displayValue(booking.emergencyContactName, 'Not provided')}</p>
+                    <p className="text-sm font-medium text-gray-800 bg-gray-50 p-2.5 rounded-lg border border-gray-100">{formatDate(booking.leadCreationDate)}</p>
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="book-emergency-phone">Emergency Contact Phone</Label>
-                  {isEditing ? (
-                    <Input
-                      id="book-emergency-phone"
-                      value={formData.emergencyContactPhone}
-                      placeholder="Emergency Contact Phone"
-                      onChange={(e) => setFormData(prev => ({ ...prev, emergencyContactPhone: e.target.value }))}
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-800 bg-gray-50 p-2.5 rounded-lg border border-gray-100">{displayValue(booking.emergencyContactPhone, 'Not provided')}</p>
-                  )}
-                </div>
+                {/* Aadhaar, Email, and Emergency contact fields removed from main travel specs */}
               </div>
             </div>
 
@@ -864,12 +866,12 @@ export default function BookingDetailPage() {
             {((isEditing && formData.passengers && formData.passengers.length > 0) || 
               (!isEditing && booking.passengers && booking.passengers.length > 0)) && (
               <div className="border-t border-gray-100 pt-6 space-y-4">
-                <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wider">Additional Passenger Details</h3>
+                <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wider">Passenger Personal Details</h3>
                 {isEditing ? (
                   <div className="space-y-4">
                     {formData.passengers.map((passenger, index) => (
                       <div key={index} className="p-4 border border-gray-100 rounded-lg bg-gray-50/50 space-y-3">
-                        <h4 className="text-sm font-medium text-gray-700">Passenger #{index + 2}</h4>
+                        <h4 className="text-sm font-medium text-gray-700">Passenger #{index + 1}</h4>
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                           <div className="space-y-1">
                             <Label>Name</Label>
@@ -983,7 +985,7 @@ export default function BookingDetailPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {booking.passengers?.map((passenger, index) => (
                       <div key={index} className="p-3.5 border border-gray-150 rounded-lg bg-gray-50 space-y-1.5 shadow-sm">
-                        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Passenger #{index + 2}</h4>
+                        <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Passenger #{index + 1}</h4>
                         <p className="text-sm font-semibold text-gray-800">{passenger.name || 'Name not provided'}</p>
                         <div className="flex gap-2 text-xs text-gray-600">
                           {passenger.gender && <Badge variant="outline" className="text-[10px] capitalize font-medium py-0 px-1.5">{passenger.gender}</Badge>}

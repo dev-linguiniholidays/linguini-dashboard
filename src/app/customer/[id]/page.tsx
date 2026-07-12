@@ -451,36 +451,9 @@ export default function CustomerDetailPage() {
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="cust-aadhaar">Aadhaar Number</Label>
-                  {isEditing ? (
-                    <Input
-                      id="cust-aadhaar"
-                      value={formData.aadhaarNo}
-                      placeholder="12-digit number"
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/\D/g, '').substring(0, 12);
-                        setFormData(prev => ({ ...prev, aadhaarNo: val }));
-                      }}
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-800 bg-gray-50 p-2.5 rounded-lg border border-gray-100">{displayValue(customer.aadhaarNo, 'Not provided')}</p>
-                  )}
-                </div>
+                {/* Aadhaar Number field removed from details section */}
 
-                <div className="space-y-2">
-                  <Label htmlFor="cust-lead-creation">Lead Created Date</Label>
-                  {isEditing ? (
-                    <Input
-                      id="cust-lead-creation"
-                      type="date"
-                      value={formData.leadCreationDate}
-                      onChange={(e) => setFormData(prev => ({ ...prev, leadCreationDate: e.target.value }))}
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-800 bg-gray-50 p-2.5 rounded-lg border border-gray-100">{formatDate(customer.leadCreationDate)}</p>
-                  )}
-                </div>
+                {/* Lead Created Date field moved to Travel plans column */}
               </div>
 
               {/* Travel Specification */}
@@ -564,35 +537,21 @@ export default function CustomerDetailPage() {
                   )}
                 </div>
 
-                {/* Aadhaar and Email moved to left column */}
-
                 <div className="space-y-2">
-                  <Label htmlFor="cust-emergency-name">Emergency Contact Person</Label>
+                  <Label htmlFor="cust-lead-creation">Lead Created Date</Label>
                   {isEditing ? (
                     <Input
-                      id="cust-emergency-name"
-                      value={formData.emergencyContactName}
-                      placeholder="Emergency Contact Name"
-                      onChange={(e) => setFormData(prev => ({ ...prev, emergencyContactName: e.target.value }))}
+                      id="cust-lead-creation"
+                      type="date"
+                      value={formData.leadCreationDate}
+                      onChange={(e) => setFormData(prev => ({ ...prev, leadCreationDate: e.target.value }))}
                     />
                   ) : (
-                    <p className="text-sm font-medium text-gray-800 bg-gray-50 p-2.5 rounded-lg border border-gray-100">{displayValue(customer.emergencyContactName, 'Not provided')}</p>
+                    <p className="text-sm font-medium text-gray-800 bg-gray-50 p-2.5 rounded-lg border border-gray-100">{formatDate(customer.leadCreationDate)}</p>
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="cust-emergency-phone">Emergency Contact Phone</Label>
-                  {isEditing ? (
-                    <Input
-                      id="cust-emergency-phone"
-                      value={formData.emergencyContactPhone}
-                      placeholder="Emergency Contact Phone"
-                      onChange={(e) => setFormData(prev => ({ ...prev, emergencyContactPhone: e.target.value }))}
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-800 bg-gray-50 p-2.5 rounded-lg border border-gray-100">{displayValue(customer.emergencyContactPhone, 'Not provided')}</p>
-                  )}
-                </div>
+                {/* Emergency Contact fields removed from details section */}
 
                 <div className="space-y-2">
                   <Label htmlFor="cust-package-cost">Package Cost (₹)</Label>
