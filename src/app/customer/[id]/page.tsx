@@ -13,7 +13,7 @@ import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useAuth } from '@/contexts/AuthContext';
-import { displayValue, formatDate, formatDateTime } from '@/lib/displayUtils';
+import { displayValue, formatDate, formatDateTime, isValidPhoneNumber } from '@/lib/displayUtils';
 import { canEditCustomer, canConfirmBooking, isSuperAdmin, isAdmin } from '@/lib/roleUtils';
 import { toast } from 'sonner';
 
@@ -189,21 +189,29 @@ export default function CustomerDetailPage() {
   }
 
   const handlePhoneChange = (value: string) => {
+    if (!value || value.trim() === '') {
+      setFormData(prev => ({ ...prev, phone: '' }));
+      return;
+    }
+
     let cleanValue = value.replace(/[^\d+]/g, '');
-    if (!cleanValue.startsWith('+91')) {
-      if (cleanValue.startsWith('91')) {
-        cleanValue = '+' + cleanValue;
-      } else if (cleanValue.startsWith('+')) {
-        cleanValue = '+91' + cleanValue.substring(1);
-      } else {
-        cleanValue = '+91' + cleanValue;
+    
+    if (cleanValue.length > 0) {
+      if (!cleanValue.startsWith('+91')) {
+        if (cleanValue.startsWith('91')) {
+          cleanValue = '+' + cleanValue;
+        } else if (cleanValue.startsWith('+')) {
+          cleanValue = '+91' + cleanValue.substring(1);
+        } else {
+          cleanValue = '+91' + cleanValue;
+        }
       }
-    }
-    if (cleanValue.length > 13) {
-      cleanValue = cleanValue.substring(0, 13);
-    }
-    if (cleanValue.length > 3) {
-      cleanValue = cleanValue.substring(0, 3) + ' ' + cleanValue.substring(3);
+      if (cleanValue.length > 13) {
+        cleanValue = cleanValue.substring(0, 13);
+      }
+      if (cleanValue.length > 3) {
+        cleanValue = cleanValue.substring(0, 3) + ' ' + cleanValue.substring(3);
+      }
     }
     setFormData(prev => ({ ...prev, phone: cleanValue }));
   };
@@ -215,6 +223,10 @@ export default function CustomerDetailPage() {
     }
     if (!formData.phone.trim()) {
       toast.error('Phone is required');
+      return;
+    }
+    if (!isValidPhoneNumber(formData.phone)) {
+      toast.error('Please enter a valid phone number');
       return;
     }
     if (formData.aadhaarNo && formData.aadhaarNo.trim()) {
@@ -345,6 +357,8 @@ export default function CustomerDetailPage() {
     return assignee;
   };
 
+  const isPhoneValid = isValidPhoneNumber(formData.phone);
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
@@ -375,7 +389,7 @@ export default function CustomerDetailPage() {
         <div className="flex items-center gap-2 flex-wrap">
           {isEditing ? (
             <>
-              <Button onClick={handleSave} className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm">
+              <Button onClick={handleSave} disabled={!isPhoneValid} className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm">
                 <Save className="h-4 w-4 mr-2" />
                 Save Changes
               </Button>
@@ -425,12 +439,18 @@ export default function CustomerDetailPage() {
                 <div className="space-y-2">
                   <Label htmlFor="cust-phone">Phone Number</Label>
                   {isEditing ? (
-                    <Input
-                      id="cust-phone"
-                      value={formData.phone}
-                      onChange={(e) => handlePhoneChange(e.target.value)}
-                      placeholder="+91 9876543210"
-                    />
+                    <>
+                      <Input
+                        id="cust-phone"
+                        value={formData.phone}
+                        onChange={(e) => handlePhoneChange(e.target.value)}
+                        placeholder="+91 9876543210"
+                        className={formData.phone && !isPhoneValid ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                      />
+                      {formData.phone && !isPhoneValid && (
+                        <p className="text-xs text-red-500 font-medium">Must be a valid 10-digit Indian phone number starting with +91</p>
+                      )}
+                    </>
                   ) : (
                     <p className="text-sm font-medium text-gray-800 bg-gray-50 p-2.5 rounded-lg border border-gray-100">{customer.phone}</p>
                   )}

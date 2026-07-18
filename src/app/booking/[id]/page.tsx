@@ -13,7 +13,7 @@ import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { useBookings } from '@/hooks/useBookings';
 import { useAuth } from '@/contexts/AuthContext';
-import { displayValue, formatDate, formatDateTime } from '@/lib/displayUtils';
+import { displayValue, formatDate, formatDateTime, isValidPhoneNumber } from '@/lib/displayUtils';
 import { canEditBooking, isSuperAdmin, isAdmin } from '@/lib/roleUtils';
 import { toast } from 'sonner';
 
@@ -129,6 +129,7 @@ export default function BookingDetailPage() {
     email: '',
     emergencyContactName: '',
     emergencyContactPhone: '',
+    bookingId: '',
   });
   const [newComment, setNewComment] = useState('');
   
@@ -210,6 +211,7 @@ export default function BookingDetailPage() {
         email: booking.email || '',
         emergencyContactName: booking.emergencyContactName || '',
         emergencyContactPhone: booking.emergencyContactPhone || '',
+        bookingId: booking.bookingId || '',
       });
     }
   }, [booking]);
@@ -260,24 +262,32 @@ export default function BookingDetailPage() {
     );
   }
 
-  const handlePhoneChange = (value: string) => {
+  const formatPhoneNumber = (value: string) => {
+    if (!value || value.trim() === '') return '';
     let cleanValue = value.replace(/[^\d+]/g, '');
-    if (!cleanValue.startsWith('+91')) {
-      if (cleanValue.startsWith('91')) {
-        cleanValue = '+' + cleanValue;
-      } else if (cleanValue.startsWith('+')) {
-        cleanValue = '+91' + cleanValue.substring(1);
-      } else {
-        cleanValue = '+91' + cleanValue;
+    
+    if (cleanValue.length > 0) {
+      if (!cleanValue.startsWith('+91')) {
+        if (cleanValue.startsWith('91')) {
+          cleanValue = '+' + cleanValue;
+        } else if (cleanValue.startsWith('+')) {
+          cleanValue = '+91' + cleanValue.substring(1);
+        } else {
+          cleanValue = '+91' + cleanValue;
+        }
+      }
+      if (cleanValue.length > 13) {
+        cleanValue = cleanValue.substring(0, 13);
+      }
+      if (cleanValue.length > 3) {
+        cleanValue = cleanValue.substring(0, 3) + ' ' + cleanValue.substring(3);
       }
     }
-    if (cleanValue.length > 13) {
-      cleanValue = cleanValue.substring(0, 13);
-    }
-    if (cleanValue.length > 3) {
-      cleanValue = cleanValue.substring(0, 3) + ' ' + cleanValue.substring(3);
-    }
-    setFormData(prev => ({ ...prev, phone: cleanValue }));
+    return cleanValue;
+  };
+
+  const handlePhoneChange = (value: string) => {
+    setFormData(prev => ({ ...prev, phone: formatPhoneNumber(value) }));
   };
 
   const handleSave = async () => {
@@ -285,8 +295,8 @@ export default function BookingDetailPage() {
       toast.error('Name is required');
       return;
     }
-    if (!formData.phone.trim()) {
-      toast.error('Phone is required');
+    if (!isValidPhoneNumber(formData.phone)) {
+      toast.error('Please enter a valid phone number');
       return;
     }
     if (formData.aadhaarNo && formData.aadhaarNo.trim()) {
@@ -296,12 +306,24 @@ export default function BookingDetailPage() {
       }
     }
 
-    if (formData.numberOfPax > 1 && formData.passengers) {
+    if (formData.numberOfPax > 0 && formData.passengers) {
       let hasError = false;
       formData.passengers.forEach((pax, index) => {
         if (pax.aadhaarNo && pax.aadhaarNo.trim()) {
           if (!/^\d{12}$/.test(pax.aadhaarNo.replace(/\s/g, ''))) {
-            toast.error(`Passenger #${index + 2} Aadhaar number must be a 12-digit number`);
+            toast.error(`Passenger #${index + 1} Aadhaar number must be a 12-digit number`);
+            hasError = true;
+          }
+        }
+        if (pax.contactNo && pax.contactNo.trim()) {
+          if (!isValidPhoneNumber(pax.contactNo)) {
+            toast.error(`Passenger #${index + 1} contact number must be a valid phone number`);
+            hasError = true;
+          }
+        }
+        if (pax.emergencyContactPhone && pax.emergencyContactPhone.trim()) {
+          if (!isValidPhoneNumber(pax.emergencyContactPhone)) {
+            toast.error(`Passenger #${index + 1} emergency contact number must be a valid phone number`);
             hasError = true;
           }
         }
@@ -503,6 +525,13 @@ export default function BookingDetailPage() {
   const totalPayments = payments.reduce((sum, pay) => sum + pay.amount, 0);
   const pendingAmount = (booking.packageCost || 0) - totalPayments;
 
+  const isPrimaryPhoneValid = isValidPhoneNumber(formData.phone);
+  const arePassengersPhonesValid = !formData.passengers || (
+    formData.passengers.every(pax => !pax.contactNo?.trim() || isValidPhoneNumber(pax.contactNo)) && 
+    formData.passengers.every(pax => !pax.emergencyContactPhone?.trim() || isValidPhoneNumber(pax.emergencyContactPhone))
+  );
+  const isBookingFormValid = isPrimaryPhoneValid && arePassengersPhonesValid;
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
@@ -530,7 +559,7 @@ export default function BookingDetailPage() {
         <div className="flex items-center gap-2 flex-wrap">
           {isEditing ? (
             <>
-              <Button onClick={handleSave} className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm">
+              <Button onClick={handleSave} disabled={!isBookingFormValid} className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm">
                 <Save className="h-4 w-4 mr-2" />
                 Save Changes
               </Button>
@@ -565,10 +594,20 @@ export default function BookingDetailPage() {
                 <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Contact details</h3>
                 
                 <div className="space-y-2">
-                  <Label>Booking ID</Label>
-                  <p className="text-sm font-mono font-semibold text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-200 select-all">
-                    {booking.bookingId || 'N/A'}
-                  </p>
+                  <Label htmlFor="book-booking-id">Booking ID</Label>
+                  {isEditing ? (
+                    <Input
+                      id="book-booking-id"
+                      value={formData.bookingId || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, bookingId: e.target.value }))}
+                      placeholder="LH26/27-0039"
+                      className="font-mono font-semibold text-slate-700 bg-slate-50 border border-slate-200 w-fit min-w-[200px]"
+                    />
+                  ) : (
+                    <p className="text-sm font-mono font-semibold text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-200 select-all">
+                      {booking.bookingId || 'N/A'}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -587,12 +626,18 @@ export default function BookingDetailPage() {
                 <div className="space-y-2">
                   <Label htmlFor="book-phone">Phone Number</Label>
                   {isEditing ? (
-                    <Input
-                      id="book-phone"
-                      value={formData.phone}
-                      onChange={(e) => handlePhoneChange(e.target.value)}
-                      placeholder="+91 9876543210"
-                    />
+                    <>
+                      <Input
+                        id="book-phone"
+                        value={formData.phone}
+                        onChange={(e) => handlePhoneChange(e.target.value)}
+                        placeholder="+91 9876543210"
+                        className={formData.phone && !isPrimaryPhoneValid ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                      />
+                      {formData.phone && !isPrimaryPhoneValid && (
+                        <p className="text-xs text-red-500 font-medium">Must be a valid 10-digit Indian phone number starting with +91</p>
+                      )}
+                    </>
                   ) : (
                     <p className="text-sm font-medium text-gray-800 bg-gray-50 p-2.5 rounded-lg border border-gray-100">{booking.phone}</p>
                   )}
@@ -823,7 +868,7 @@ export default function BookingDetailPage() {
             </div>
 
             {/* Payment & Profit Summary Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-gray-100">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 pt-4 border-t border-gray-100">
               <div className="space-y-2">
                 <Label>Total Paid</Label>
                 <p className="text-sm font-semibold text-emerald-700 bg-emerald-50/50 p-2.5 rounded-lg border border-emerald-100">
@@ -932,13 +977,17 @@ export default function BookingDetailPage() {
                             <Label>Contact No</Label>
                             <Input
                               value={passenger.contactNo || ''}
-                              placeholder="Phone number"
+                              placeholder="+91 9876543210"
                               onChange={(e) => {
                                 const updated = [...formData.passengers];
-                                updated[index].contactNo = e.target.value;
+                                updated[index].contactNo = formatPhoneNumber(e.target.value);
                                 setFormData(prev => ({ ...prev, passengers: updated }));
                               }}
+                              className={passenger.contactNo && !isValidPhoneNumber(passenger.contactNo) ? 'border-red-500 focus-visible:ring-red-500' : ''}
                             />
+                            {passenger.contactNo && !isValidPhoneNumber(passenger.contactNo) && (
+                              <p className="text-[10px] text-red-500 font-medium mt-0.5">Invalid Indian phone number</p>
+                            )}
                           </div>
                           <div className="space-y-1">
                             <Label>Email ID</Label>
@@ -969,13 +1018,17 @@ export default function BookingDetailPage() {
                             <Label>Emergency Contact Phone</Label>
                             <Input
                               value={passenger.emergencyContactPhone || ''}
-                              placeholder="Phone number"
+                              placeholder="+91 9876543210"
                               onChange={(e) => {
                                 const updated = [...formData.passengers];
-                                updated[index].emergencyContactPhone = e.target.value;
+                                updated[index].emergencyContactPhone = formatPhoneNumber(e.target.value);
                                 setFormData(prev => ({ ...prev, passengers: updated }));
                               }}
+                              className={passenger.emergencyContactPhone && !isValidPhoneNumber(passenger.emergencyContactPhone) ? 'border-red-500 focus-visible:ring-red-500' : ''}
                             />
+                            {passenger.emergencyContactPhone && !isValidPhoneNumber(passenger.emergencyContactPhone) && (
+                              <p className="text-[10px] text-red-500 font-medium mt-0.5">Invalid Indian phone number</p>
+                            )}
                           </div>
                         </div>
                       </div>

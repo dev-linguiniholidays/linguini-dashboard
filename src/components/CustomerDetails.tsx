@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Edit, Save, X, MessageSquare, Send, Loader2, Lock, Unlock, Check } from 'lucide-react';
-import { displayValue, formatDate, formatDateTime } from '@/lib/displayUtils';
+import { displayValue, formatDate, formatDateTime, isValidPhoneNumber } from '@/lib/displayUtils';
 import { canEditCustomer, isSuperAdmin, isAdmin, canConfirmBooking } from '@/lib/roleUtils';
 import { toast } from 'sonner';
 
@@ -121,28 +121,35 @@ export const CustomerDetails = ({
   const [newComment, setNewComment] = useState('');
 
   const handlePhoneChange = (value: string) => {
+    if (!value || value.trim() === '') {
+      setFormData(prev => ({ ...prev, phone: '' }));
+      return;
+    }
+
     // Remove all non-digit characters except +
     let cleanValue = value.replace(/[^\d+]/g, '');
     
-    // If it doesn't start with +91, add it
-    if (!cleanValue.startsWith('+91')) {
-      if (cleanValue.startsWith('91')) {
-        cleanValue = '+' + cleanValue;
-      } else if (cleanValue.startsWith('+')) {
-        cleanValue = '+91' + cleanValue.substring(1);
-      } else {
-        cleanValue = '+91' + cleanValue;
+    if (cleanValue.length > 0) {
+      // If it doesn't start with +91, add it
+      if (!cleanValue.startsWith('+91')) {
+        if (cleanValue.startsWith('91')) {
+          cleanValue = '+' + cleanValue;
+        } else if (cleanValue.startsWith('+')) {
+          cleanValue = '+91' + cleanValue.substring(1);
+        } else {
+          cleanValue = '+91' + cleanValue;
+        }
       }
-    }
-    
-    // Limit to 10 digits after +91
-    if (cleanValue.length > 13) { // +91 + 10 digits
-      cleanValue = cleanValue.substring(0, 13);
-    }
-    
-    // Add space after +91 for better readability
-    if (cleanValue.length > 3) {
-      cleanValue = cleanValue.substring(0, 3) + ' ' + cleanValue.substring(3);
+      
+      // Limit to 10 digits after +91
+      if (cleanValue.length > 13) { // +91 + 10 digits
+        cleanValue = cleanValue.substring(0, 13);
+      }
+      
+      // Add space after +91 for better readability
+      if (cleanValue.length > 3) {
+        cleanValue = cleanValue.substring(0, 3) + ' ' + cleanValue.substring(3);
+      }
     }
     
     setFormData(prev => ({ ...prev, phone: cleanValue }));
@@ -180,6 +187,10 @@ export const CustomerDetails = ({
     }
     if (!formData.phone.trim()) {
       toast.error('Phone is required');
+      return;
+    }
+    if (!isValidPhoneNumber(formData.phone)) {
+      toast.error('Please enter a valid phone number');
       return;
     }
     if (formData.aadhaarNo && formData.aadhaarNo.trim()) {
@@ -280,6 +291,8 @@ export const CustomerDetails = ({
   };
 
 
+  const isPhoneValid = isValidPhoneNumber(formData.phone);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-full h-full max-w-none max-h-none md:max-w-4xl md:max-h-[90vh] md:w-auto md:h-auto overflow-y-auto">
@@ -291,7 +304,7 @@ export const CustomerDetails = ({
             <div className="flex gap-3 mr-8">
               {isEditing ? (
                 <>
-                  <Button onClick={handleSave} disabled={isLoading} size="sm">
+                  <Button onClick={handleSave} disabled={isLoading || !isPhoneValid} size="sm">
                     <Save className="h-4 w-4 mr-1" />
                     Save
                   </Button>
@@ -382,11 +395,17 @@ export const CustomerDetails = ({
             <div className="space-y-2">
               <Label>Phone</Label>
               {isEditing ? (
-                <Input
-                  value={formData.phone}
-                  onChange={(e) => handlePhoneChange(e.target.value)}
-                  placeholder="+91 9876543210"
-                />
+                <>
+                  <Input
+                    value={formData.phone}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    placeholder="+91 9876543210"
+                    className={formData.phone && !isPhoneValid ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                  />
+                  {formData.phone && !isPhoneValid && (
+                    <p className="text-xs text-red-500 font-medium">Must be a valid 10-digit Indian phone number starting with +91</p>
+                  )}
+                </>
               ) : (
                 <p className="text-sm font-medium">{customer.phone}</p>
               )}

@@ -242,7 +242,7 @@ export const customerService = {
     const fyStr = `${xx}/${yy}`;
     const fyPrefix = `LH${fyStr}-`;
 
-    let maxNumber = 130;
+    let maxNumber = 38;
     if (bookingsData && bookingsData.length > 0) {
       for (const b of bookingsData) {
         if (b.booking_id && b.booking_id.startsWith(fyPrefix)) {

@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Loader2 } from 'lucide-react';
 import { isAdmin } from '@/lib/roleUtils';
 import { toast } from 'sonner';
+import { isValidPhoneNumber } from '@/lib/displayUtils';
 
 interface CustomerFormProps {
   customer?: Customer;
@@ -110,14 +111,8 @@ export const CustomerForm = ({
 
     if (!formData.phone.trim()) {
       newErrors.phone = 'Phone is required';
-    } else {
-      // Remove spaces and check for Indian phone number format
-      const cleanPhone = formData.phone.replace(/\s/g, '');
-      const indianPhoneRegex = /^(\+91|91)?[6-9]\d{9}$/;
-      
-      if (!indianPhoneRegex.test(cleanPhone)) {
-        newErrors.phone = 'Please enter a valid phone number';
-      }
+    } else if (!isValidPhoneNumber(formData.phone)) {
+      newErrors.phone = 'Please enter a valid 10-digit Indian phone number starting with +91';
     }
 
     // Only validate date logic if both dates are provided
@@ -203,28 +198,38 @@ export const CustomerForm = ({
   };
 
   const handlePhoneChange = (value: string) => {
+    if (!value || value.trim() === '') {
+      setFormData(prev => ({ ...prev, phone: '' }));
+      if (errors.phone) {
+        setErrors(prev => ({ ...prev, phone: '' }));
+      }
+      return;
+    }
+
     // Remove all non-digit characters except +
     let cleanValue = value.replace(/[^\d+]/g, '');
     
-    // If it doesn't start with +91, add it
-    if (!cleanValue.startsWith('+91')) {
-      if (cleanValue.startsWith('91')) {
-        cleanValue = '+' + cleanValue;
-      } else if (cleanValue.startsWith('+')) {
-        cleanValue = '+91' + cleanValue.substring(1);
-      } else {
-        cleanValue = '+91' + cleanValue;
+    if (cleanValue.length > 0) {
+      // If it doesn't start with +91, add it
+      if (!cleanValue.startsWith('+91')) {
+        if (cleanValue.startsWith('91')) {
+          cleanValue = '+' + cleanValue;
+        } else if (cleanValue.startsWith('+')) {
+          cleanValue = '+91' + cleanValue.substring(1);
+        } else {
+          cleanValue = '+91' + cleanValue;
+        }
       }
-    }
-    
-    // Limit to 10 digits after +91
-    if (cleanValue.length > 13) { // +91 + 10 digits
-      cleanValue = cleanValue.substring(0, 13);
-    }
-    
-    // Add space after +91 for better readability
-    if (cleanValue.length > 3) {
-      cleanValue = cleanValue.substring(0, 3) + ' ' + cleanValue.substring(3);
+      
+      // Limit to 10 digits after +91
+      if (cleanValue.length > 13) { // +91 + 10 digits
+        cleanValue = cleanValue.substring(0, 13);
+      }
+      
+      // Add space after +91 for better readability
+      if (cleanValue.length > 3) {
+        cleanValue = cleanValue.substring(0, 3) + ' ' + cleanValue.substring(3);
+      }
     }
     
     setFormData(prev => ({ ...prev, phone: cleanValue }));

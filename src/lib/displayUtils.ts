@@ -43,3 +43,11 @@ export const formatDateTime = (dateString: string | undefined | null): string =>
     return 'N/A';
   }
 };
+
+// Validate phone number format (enforces Indian standard starting with +91)
+export const isValidPhoneNumber = (phone: string | undefined | null): boolean => {
+  if (!phone) return false;
+  const clean = phone.replace(/[\s-]/g, '');
+  const indianRegex = /^\+91[6-9]\d{9}$/;
+  return indianRegex.test(clean);
+};
