@@ -18,7 +18,13 @@ function AppContent({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    posthog.capture('$pageview');
+    try {
+      if (process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+        posthog.capture('$pageview');
+      }
+    } catch (error) {
+      console.warn('Failed to capture pageview:', error);
+    }
   }, [pathname]);
 
   if (isLoginPage) {
