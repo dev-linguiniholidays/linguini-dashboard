@@ -56,6 +56,9 @@ const categoryColors: Record<string, string> = {
   'Travel Hamper': 'bg-pink-50 text-pink-700 border-pink-200',
   'Medical Kit': 'bg-rose-50 text-rose-700 border-rose-200',
   'Misc.': 'bg-gray-50 text-gray-700 border-gray-200',
+  DMC: 'bg-violet-50 text-violet-700 border-violet-200',
+  B2B: 'bg-teal-50 text-teal-700 border-teal-200',
+  Vendor: 'bg-orange-50 text-orange-700 border-orange-200',
 };
 
 const tagColors: Record<Payment['tag'], string> = {
@@ -1292,6 +1295,9 @@ export default function BookingDetailPage() {
                       <SelectItem value="Guide">Guide</SelectItem>
                       <SelectItem value="Travel Hamper">Travel Hamper</SelectItem>
                       <SelectItem value="Medical Kit">Medical Kit</SelectItem>
+                      <SelectItem value="DMC">DMC</SelectItem>
+                      <SelectItem value="B2B">B2B</SelectItem>
+                      <SelectItem value="Vendor">Vendor</SelectItem>
                       <SelectItem value="Misc.">Misc.</SelectItem>
                     </SelectContent>
                   </Select>

@@ -45,7 +45,7 @@ export interface Customer {
 export interface Expense {
   id: string;
   amount: number;
-  category: 'Hotel' | 'Taxi' | 'Bus' | 'Guide' | 'Travel Hamper' | 'Medical Kit' | 'Misc.';
+  category: 'Hotel' | 'Taxi' | 'Bus' | 'Guide' | 'Travel Hamper' | 'Medical Kit' | 'Misc.' | 'DMC' | 'B2B' | 'Vendor';
   description: string;
   userId: string;
   userName: string;

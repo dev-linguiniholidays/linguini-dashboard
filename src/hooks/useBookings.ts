@@ -221,7 +221,7 @@ export const useBookings = () => {
   const addExpense = async ({ bookingId, amount, category, description, userId, userName }: {
     bookingId: string;
     amount: number;
-    category: 'Hotel' | 'Taxi' | 'Bus' | 'Guide' | 'Travel Hamper' | 'Medical Kit' | 'Misc.';
+    category: 'Hotel' | 'Taxi' | 'Bus' | 'Guide' | 'Travel Hamper' | 'Medical Kit' | 'Misc.' | 'DMC' | 'B2B' | 'Vendor';
     description: string;
     userId: string;
     userName: string;

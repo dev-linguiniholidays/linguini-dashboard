@@ -197,7 +197,7 @@ CREATE TABLE IF NOT EXISTS public.booking_expenses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   booking_id UUID REFERENCES public.bookings(id) ON DELETE CASCADE NOT NULL,
   amount NUMERIC NOT NULL CHECK (amount >= 0),
-  category TEXT CHECK (category IN ('Hotel', 'Taxi', 'Bus', 'Guide', 'Travel Hamper', 'Medical Kit', 'Misc.')) NOT NULL,
+  category TEXT CHECK (category IN ('Hotel', 'Taxi', 'Bus', 'Guide', 'Travel Hamper', 'Medical Kit', 'Misc.', 'DMC', 'B2B', 'Vendor')) NOT NULL,
   description TEXT,
   user_id TEXT NOT NULL,
   user_name TEXT NOT NULL,

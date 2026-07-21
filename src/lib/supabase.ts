@@ -220,7 +220,7 @@ export interface Database {
           id: string
           booking_id: string
           amount: number
-          category: 'Hotel' | 'Taxi' | 'Bus' | 'Guide' | 'Travel Hamper' | 'Medical Kit' | 'Misc.'
+          category: 'Hotel' | 'Taxi' | 'Bus' | 'Guide' | 'Travel Hamper' | 'Medical Kit' | 'Misc.' | 'DMC' | 'B2B' | 'Vendor'
           description: string | null
           user_id: string
           user_name: string
@@ -230,7 +230,7 @@ export interface Database {
           id?: string
           booking_id: string
           amount: number
-          category: 'Hotel' | 'Taxi' | 'Bus' | 'Guide' | 'Travel Hamper' | 'Medical Kit' | 'Misc.'
+          category: 'Hotel' | 'Taxi' | 'Bus' | 'Guide' | 'Travel Hamper' | 'Medical Kit' | 'Misc.' | 'DMC' | 'B2B' | 'Vendor'
           description?: string | null
           user_id: string
           user_name: string
@@ -240,7 +240,7 @@ export interface Database {
           id?: string
           booking_id?: string
           amount?: number
-          category?: 'Hotel' | 'Taxi' | 'Bus' | 'Guide' | 'Travel Hamper' | 'Medical Kit' | 'Misc.'
+          category?: 'Hotel' | 'Taxi' | 'Bus' | 'Guide' | 'Travel Hamper' | 'Medical Kit' | 'Misc.' | 'DMC' | 'B2B' | 'Vendor'
           description?: string | null
           user_id?: string
           user_name?: string
