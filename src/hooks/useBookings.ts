@@ -3,6 +3,17 @@ import { Booking, Comment, Expense, Payment } from '@/lib/types';
 import { bookingService, bookingCommentService, bookingExpenseService, bookingPaymentService, convertDbBookingToFrontend, convertFrontendBookingToDb, convertPartialFrontendBookingToDb, customerService } from '@/lib/database';
 import { supabase } from '@/lib/supabase';
 
+const sortBookingsByBookingIdDesc = (a: Booking, b: Booking) => {
+  const idA = a.bookingId || '';
+  const idB = b.bookingId || '';
+  
+  if (idA === '' && idB !== '') return 1;  // empty IDs go to the bottom
+  if (idA !== '' && idB === '') return -1;
+  if (idA === '' && idB === '') return 0;
+  
+  return idB.localeCompare(idA, undefined, { numeric: true, sensitivity: 'base' });
+};
+
 export const useBookings = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,7 +49,7 @@ export const useBookings = () => {
               };
             })
           );
-          
+          bookingsWithCommentsAndExpenses.sort(sortBookingsByBookingIdDesc);
           setBookings(bookingsWithCommentsAndExpenses);
 
           try {
@@ -77,7 +88,11 @@ export const useBookings = () => {
         const dbBooking = convertFrontendBookingToDb(newBooking);
         const createdBooking = await bookingService.create(dbBooking);
         const frontendBooking = convertDbBookingToFrontend(createdBooking);
-        setBookings(prev => [frontendBooking, ...prev]);
+        setBookings(prev => {
+          const updated = [frontendBooking, ...prev];
+          updated.sort(sortBookingsByBookingIdDesc);
+          return updated;
+        });
       } else {
         const booking: Booking = {
           ...newBooking,
@@ -88,7 +103,11 @@ export const useBookings = () => {
           payments: [],
           profit: newBooking.packageCost || 0,
         };
-        setBookings(prev => [...prev, booking]);
+        setBookings(prev => {
+          const updated = [...prev, booking];
+          updated.sort(sortBookingsByBookingIdDesc);
+          return updated;
+        });
       }
     } catch (error) {
       console.error('Error adding booking:', error);
@@ -102,21 +121,29 @@ export const useBookings = () => {
         const dbUpdates = convertPartialFrontendBookingToDb(updates);
         const updatedBooking = await bookingService.update(id, dbUpdates);
         const frontendBooking = convertDbBookingToFrontend(updatedBooking);
-        setBookings(prev => prev.map(b => 
-          b.id === id 
-            ? { ...frontendBooking, comments: b.comments, expenses: b.expenses, payments: b.payments }
-            : b
-        ));
+        setBookings(prev => {
+          const updated = prev.map(b => 
+            b.id === id 
+              ? { ...frontendBooking, comments: b.comments, expenses: b.expenses, payments: b.payments }
+              : b
+          );
+          updated.sort(sortBookingsByBookingIdDesc);
+          return updated;
+        });
       } else {
-        setBookings(prev => prev.map(b => {
-          if (b.id === id) {
-            const merged = { ...b, ...updates, updatedAt: new Date().toISOString() };
-            const totalExp = (merged.expenses || []).reduce((sum, exp) => sum + exp.amount, 0);
-            merged.profit = (merged.packageCost || 0) - totalExp;
-            return merged;
-          }
-          return b;
-        }));
+        setBookings(prev => {
+          const updated = prev.map(b => {
+            if (b.id === id) {
+              const merged = { ...b, ...updates, updatedAt: new Date().toISOString() };
+              const totalExp = (merged.expenses || []).reduce((sum, exp) => sum + exp.amount, 0);
+              merged.profit = (merged.packageCost || 0) - totalExp;
+              return merged;
+            }
+            return b;
+          });
+          updated.sort(sortBookingsByBookingIdDesc);
+          return updated;
+        });
       }
     } catch (error) {
       console.error('Error updating booking:', error);
@@ -421,6 +448,7 @@ export const useBookingSearch = (bookings: Booking[], destinationOptions: string
             })
           );
           
+          resultsWithCommentsAndExpenses.sort(sortBookingsByBookingIdDesc);
           setFilteredBookings(resultsWithCommentsAndExpenses);
         } catch (error) {
           console.error('Search error:', error);
@@ -443,6 +471,7 @@ export const useBookingSearch = (bookings: Booking[], destinationOptions: string
 
           return matchesSearch && matchesStatus && matchesDestination && matchesLeadType && matchesService && matchesAssignee;
         });
+        filtered.sort(sortBookingsByBookingIdDesc);
         setFilteredBookings(filtered);
       }
     };

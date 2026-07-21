@@ -453,7 +453,7 @@ export const bookingService = {
     const { data, error } = await supabase
       .from('bookings')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('booking_id', { ascending: false, nullsFirst: false });
     
     if (error) throw error;
     return data || [];
@@ -555,7 +555,7 @@ export const bookingService = {
       query = query.eq('assignee', filters.assignee);
     }
     
-    const { data, error } = await query.order('created_at', { ascending: false });
+    const { data, error } = await query.order('booking_id', { ascending: false, nullsFirst: false });
     
     if (error) throw error;
     return data || [];

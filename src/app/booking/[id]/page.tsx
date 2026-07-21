@@ -631,7 +631,7 @@ export default function BookingDetailPage() {
                         id="book-phone"
                         value={formData.phone}
                         onChange={(e) => handlePhoneChange(e.target.value)}
-                        placeholder="+91 9876543210"
+                        placeholder="+91 XXXXXXXXXX"
                         className={formData.phone && !isPrimaryPhoneValid ? 'border-red-500 focus-visible:ring-red-500' : ''}
                       />
                       {formData.phone && !isPrimaryPhoneValid && (
@@ -977,7 +977,7 @@ export default function BookingDetailPage() {
                             <Label>Contact No</Label>
                             <Input
                               value={passenger.contactNo || ''}
-                              placeholder="+91 9876543210"
+                              placeholder="+91 XXXXXXXXXX"
                               onChange={(e) => {
                                 const updated = [...formData.passengers];
                                 updated[index].contactNo = formatPhoneNumber(e.target.value);
@@ -1018,7 +1018,7 @@ export default function BookingDetailPage() {
                             <Label>Emergency Contact Phone</Label>
                             <Input
                               value={passenger.emergencyContactPhone || ''}
-                              placeholder="+91 9876543210"
+                              placeholder="+91 XXXXXXXXXX"
                               onChange={(e) => {
                                 const updated = [...formData.passengers];
                                 updated[index].emergencyContactPhone = formatPhoneNumber(e.target.value);

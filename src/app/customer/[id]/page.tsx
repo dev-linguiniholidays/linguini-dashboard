@@ -444,7 +444,7 @@ export default function CustomerDetailPage() {
                         id="cust-phone"
                         value={formData.phone}
                         onChange={(e) => handlePhoneChange(e.target.value)}
-                        placeholder="+91 9876543210"
+                        placeholder="+91 XXXXXXXXXX"
                         className={formData.phone && !isPhoneValid ? 'border-red-500 focus-visible:ring-red-500' : ''}
                       />
                       {formData.phone && !isPhoneValid && (

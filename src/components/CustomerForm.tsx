@@ -266,7 +266,7 @@ export const CustomerForm = ({
                 id="phone"
                 value={formData.phone}
                 onChange={(e) => handlePhoneChange(e.target.value)}
-                placeholder="+91 9876543210"
+                placeholder="+91 XXXXXXXXXX"
                 className={errors.phone ? 'border-red-500' : ''}
               />
               {errors.phone && <p className="text-sm text-red-500">{errors.phone}</p>}
